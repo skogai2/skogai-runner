@@ -1,0 +1,12 @@
+- [ ] runner;workers with `--tools` run in the caller's tree. `wo run --sandbox` gives them their own cwd and skogai config, not a copy of the tree: give tool-using workers that edit this repo a `wt` worktree (`wo run --worktree`), see projects/orchestration delegate
+- [ ] runner;`wo` results are untyped files beside the workorder. decide if workorder becomes a dash type (dash TODO: task -> workorder)
+- [ ] runner;fold `mise run dash:check` into `skogai` or keep mise for tasks and skogai for agent io. pick one runner
+- [ ] runner;port what is still useful from old-core (`~/old/old-core/Argcfile.sh`: repo, queue, tools) into modules
+- [ ] module;plugins other than skogai-runner shipping `modules/`: how they get onto `SKOGAI_MODULE_PATH`
+- [ ] module;`module update`: pull source changes into an installed copy, `keep` respected
+- [ ] module;`~/.local/src/argc-completions/completions/skogai.sh` is generated from the gone dash-skogai CLI and shadows `skogai` completion
+- [ ] module;`~/skogai/.skogai/config` is a directory, the local config layer is a file at that path
+- [ ] module;`~/skogai` memory `dotfiles-via-mise-tools` has no `stale_after`
+- [ ] module;installed copies in `~/.config/skogai/modules/` (core, memory, runner, testname) shadow the sources and are behind them; `testname` has no source
+- [ ] runner;a thin plugin (hook + skills) over this repo, if sessions need `skogai` on PATH without a link
+- [ ] runner;CI and a pre-commit hook running `bin/skogai module test`

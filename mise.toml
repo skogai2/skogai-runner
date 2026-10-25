@@ -1,0 +1,5 @@
+[tools]
+argc = "latest"
+jq = "latest"
+yq = "latest"
+bats = "latest"
