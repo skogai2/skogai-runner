@@ -10,5 +10,7 @@ validating is the second step of a [[command]]. it takes the input the
 values against their choices, converts and normalises them, and makes sure
 everything the command needs is there.
 
-anything that can fail because of the input fails here, before the body
-runs. after this step the input is fixed, and nothing changes it again.
+input that doesn't fit is rejected here, before the body runs. a rejection
+is a normal answer, not a failure: an empty value and a message (see
+[[output]]). after this step the input is fixed, and nothing changes it
+again.
