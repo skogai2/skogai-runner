@@ -1,0 +1,2 @@
+- @.skogai/TODO.md contains one-line descriptions of tasks to be done
+- !`wt step diff -- --cached > .skogai/tmp/wt-git-diff-cached` generates the file @.skogai/tmp/wt-git-diff-cached to show the users staged changes. see this as "proposed changes" or that it should actively be considered together with the users message.
