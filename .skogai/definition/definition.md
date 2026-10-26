@@ -12,5 +12,5 @@ says what the concept means.
 a definition names a concept, never what implements it. which implementation
 is used is decided by [[provides]] and [[resolve]], not by the definition.
 
-the folder of definitions is the vocabulary. anything that isn't defined here
-doesn't exist yet.
+`definition/` is the vocabulary: everything of [[type]] definition. anything
+that isn't defined here doesn't exist yet.

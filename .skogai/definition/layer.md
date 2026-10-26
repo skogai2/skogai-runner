@@ -10,5 +10,4 @@ bottom is the [[default]]; above it sit the system, the user, the project and
 the moment, nearest last.
 
 layers are applied in order and the last one wins. a closer layer shadows a
-farther one the way an inner [[folder]] scope shadows an outer one, and
-removing a key from a layer reveals the one beneath.
+farther one, and removing a key from a layer reveals the one beneath.
