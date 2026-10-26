@@ -1,0 +1,291 @@
+<title>whereami</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* layout: one reading column, field-guide style; layers as a ruled table, real output as a specimen card */
+:root {
+  --ground: #f5f7f5;
+  --paper: #ffffff;
+  --ink: #1b2420;
+  --muted: #5a6862;
+  --rule: #d6ddd9;
+  --spruce: #2f5d50;
+  --spruce-soft: #e3ece8;
+  --amber: #8a5a10;
+  --code-bg: #eef2f0;
+  --f-display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #121715; --paper: #19201d; --ink: #e2e9e5; --muted: #95a39c;
+    --rule: #2c3632; --spruce: #86c2ac; --spruce-soft: #1f2e29; --amber: #e0b062; --code-bg: #0e1311;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #121715; --paper: #19201d; --ink: #e2e9e5; --muted: #95a39c;
+  --rule: #2c3632; --spruce: #86c2ac; --spruce-soft: #1f2e29; --amber: #e0b062; --code-bg: #0e1311;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--ground); color: var(--ink);
+  font: 400 16px/1.6 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 48px 80px;
+}
+main { max-width: 760px; margin: 0 auto; display: grid; gap: 48px; }
+section { display: grid; gap: 14px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: 2.6rem; font-weight: 700; letter-spacing: -0.01em; }
+h1 code { font-family: var(--f-mono); font-weight: 500; color: var(--spruce); font-size: 0.85em; }
+h2 { font-size: 1.5rem; font-weight: 700; }
+h3 { font-size: 1.1rem; font-weight: 700; }
+p, li { max-width: 65ch; margin: 0; }
+ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.eyebrow { font: 500 0.75rem/1 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 1.15rem; color: var(--ink); }
+header { display: grid; gap: 14px; }
+code { font-family: var(--f-mono); font-size: 0.88em; background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 3px; }
+a { color: var(--spruce); }
+.table-wrap { overflow-x: auto; border-top: 2px solid var(--ink); }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 0.92rem; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--rule); }
+th { font: 500 0.72rem/1.3 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+td:first-child { font-family: var(--f-mono); font-weight: 500; color: var(--spruce); white-space: nowrap; }
+.pill { display: inline-block; font: 500 0.72rem/1 var(--f-mono); padding: 4px 7px; border-radius: 99px; white-space: nowrap; }
+.pill.solid { background: var(--spruce-soft); color: var(--spruce); }
+.pill.hint { background: transparent; color: var(--amber); border: 1px solid currentColor; }
+.specimen { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.specimen-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+.kv { margin: 0; padding: 12px 14px; display: grid; grid-template-columns: max-content 1fr; column-gap: 18px; row-gap: 2px; font: 400 0.85rem/1.55 var(--f-mono); overflow-x: auto; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+.kv .grp { grid-column: 1 / -1; color: var(--spruce); font-weight: 500; padding-top: 8px; }
+.kv .grp:first-child { padding-top: 0; }
+pre { margin: 0; background: var(--code-bg); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font: 400 0.82rem/1.55 var(--f-mono); tab-size: 2; }
+pre code { background: none; padding: 0; font-size: inherit; }
+.code-block { display: grid; gap: 8px; }
+.code-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+button { font: 500 0.8rem/1 var(--f-mono); color: var(--spruce); background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 7px 11px; cursor: pointer; }
+button:hover { border-color: var(--spruce); }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--spruce); outline-offset: 2px; }
+.blind { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.blind div { border-left: 2px solid var(--amber); padding: 2px 0 2px 12px; display: grid; gap: 4px; }
+.blind strong { font-family: var(--f-display); font-size: 1rem; }
+.blind span { color: var(--muted); font-size: 0.92rem; }
+ol.rules { margin: 0; padding-left: 1.4em; display: grid; gap: 10px; }
+footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--rule); padding-top: 16px; }
+@media (max-width: 480px) { h1 { font-size: 2rem; } .kv { grid-template-columns: 1fr; } .kv dd { padding-bottom: 6px; } }
+</style>
+
+<main>
+<header>
+  <div class="eyebrow">skogai · field note · 2026-10-26</div>
+  <h1>whereami: what environment is this agent in?</h1>
+  <p class="lede">An agent that starts a turn should be able to say which machine it is on, whether it is boxed in, how a human reaches it, which harness runs it and what folder it stands in. Each of those has a cheap, read-only signal. One script asks all of them and prints a line per answer.</p>
+</header>
+
+<section>
+  <h2>Five layers</h2>
+  <p>The question splits cleanly. Answer each layer on its own, from the most reliable signal first. A "hint" signal can be wrong in both directions, so treat it as a lead, not a fact.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>layer</th><th>question</th><th>signals, best first</th><th>trust</th></tr></thead>
+    <tbody>
+      <tr><td>machine</td><td>Which box, which OS?</td><td><code>hostname</code>, <code>/etc/os-release</code>, <code>uname -rm</code></td><td><span class="pill solid">solid</span></td></tr>
+      <tr><td>isolation</td><td>Container, VM, WSL, or bare host?</td><td><code>systemd-detect-virt -c / -v</code>, <code>/.dockerenv</code>, <code>/run/.containerenv</code>, <code>/proc/version</code> for WSL, <code>/proc/1/cgroup</code></td><td><span class="pill solid">solid</span> <span class="pill hint">cgroup: hint</span></td></tr>
+      <tr><td>access</td><td>How does a human reach this shell?</td><td><code>SSH_CONNECTION</code>, <code>TMUX</code> / <code>ZELLIJ</code> / <code>STY</code>, <code>TERM_PROGRAM</code></td><td><span class="pill solid">solid</span></td></tr>
+      <tr><td>agent</td><td>Which harness, which session, local or cloud?</td><td><code>CLAUDECODE</code>, <code>CLAUDE_CODE_ENTRYPOINT</code>, <code>CLAUDE_CODE_REMOTE</code>, session ids, messaging socket</td><td><span class="pill hint">internal, may change</span></td></tr>
+      <tr><td>workspace</td><td>What folder, is it git, is it throwaway?</td><td><code>$PWD</code> path shape, <code>git rev-parse</code>, git-dir vs common-dir</td><td><span class="pill solid">solid</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>A real answer</h2>
+  <p>The output below is from the session that wrote this note: the Claude desktop app on the workstation, in a folder the app made for the session.</p>
+  <div class="specimen">
+    <div class="specimen-head"><span class="eyebrow">bash whereami.sh</span><span class="eyebrow">2026-10-26 · skogix-workstation</span></div>
+    <dl class="kv">
+      <dt class="grp">machine</dt>
+      <dt>machine.host</dt><dd>skogix-workstation</dd>
+      <dt>machine.distro</dt><dd>omarchy</dd>
+      <dt>machine.kernel</dt><dd>7.2.8-9-omarchy</dd>
+      <dt>machine.arch</dt><dd>x86_64</dd>
+      <dt class="grp">isolation</dt>
+      <dt>isolation.container</dt><dd>none</dd>
+      <dt>isolation.vm</dt><dd>none</dd>
+      <dt>isolation.wsl</dt><dd>no</dd>
+      <dt>isolation.pid1</dt><dd>systemd</dd>
+      <dt class="grp">access</dt>
+      <dt>access.ssh</dt><dd>no</dd>
+      <dt>access.multiplexer</dt><dd>none</dd>
+      <dt>access.terminal</dt><dd>dumb</dd>
+      <dt class="grp">agent</dt>
+      <dt>agent.harness</dt><dd>claude-code</dd>
+      <dt>agent.entrypoint</dt><dd>claude-desktop</dd>
+      <dt>agent.remote</dt><dd>false</dd>
+      <dt>agent.version</dt><dd>2.1.308</dd>
+      <dt>agent.sdk_version</dt><dd>0.3.308</dd>
+      <dt>agent.desktop_version</dt><dd>3.6556.2</dd>
+      <dt>agent.host_session_id</dt><dd>local_a802a10e-…</dd>
+      <dt>agent.child_session</dt><dd>1</dd>
+      <dt>agent.attended</dt><dd>1</dd>
+      <dt>agent.effort</dt><dd>medium</dd>
+      <dt>agent.messaging_socket</dt><dd>present</dd>
+      <dt class="grp">workspace</dt>
+      <dt>workspace.kind</dt><dd>scratch</dd>
+      <dt>workspace.git</dt><dd>no</dd>
+    </dl>
+  </div>
+  <p>Read as a sentence: a Claude Code child process started by the desktop app, on the bare host, with a human attending, in a throwaway folder that is not a repo.</p>
+</section>
+
+<section>
+  <h2>What the shell cannot see</h2>
+  <p>Some facts live only in the agent's own context: the system prompt and tool list the harness gave it. For these the agent has to report on itself, and the report belongs next to the probe output.</p>
+  <div class="blind">
+    <div><strong>Model and effort</strong><span>Only the system prompt names the model. <code>CLAUDE_EFFORT</code> covers effort.</span></div>
+    <div><strong>Permission mode</strong><span>Auto, plan, accept-edits. Stated in the prompt, never in the env.</span></div>
+    <div><strong>Sandbox</strong><span>No flag says it. Probe it: try a harmless write outside the workspace and see whether it fails.</span></div>
+    <div><strong>Tools, MCP, skills</strong><span>The loaded tool list is context. <code>CLAUDE_CODE_PLUGIN_STORE_DIR</code> shows where plugins live, not which are on.</span></div>
+    <div><strong>Who is watching</strong><span>Remote Control relays the session to a phone through the app. <code>agent.remote=false</code> does not mean nobody else is reading.</span></div>
+    <div><strong>Which machine a peer is on</strong><span>The agent list shows kind (local, cloud, Remote Control) but not host or folder. A peer has to say so itself.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Rules the script follows</h2>
+  <ol class="rules">
+    <li><strong>Every key always prints.</strong> The default is <code>unknown</code> or <code>none</code>, never a missing line. A reader can diff two runs line by line and a missing key means a broken script, not an absent fact.</li>
+    <li><strong>One fact per line, <code>layer.key=value</code>.</strong> The dot is the relation. Lines can be grepped, appended to a log, or turned into JSON without a parser.</li>
+    <li><strong>Read-only and offline.</strong> It runs nothing that writes or calls out, so any agent can run it at the start of any turn without asking.</li>
+    <li><strong>Never dump the environment.</strong> A plain <code>env</code> in an agent shell holds an OAuth scope list, a messaging token and the account email. Name each variable you read.</li>
+    <li><strong>Internal variables are hints.</strong> The <code>CLAUDE_CODE_*</code> names are what this version sets, not a published contract. They fall back to a default, so a rename shows up as <code>unknown</code> instead of a crash.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Using it</h2>
+  <p>Three shapes cover most needs. The last one answers the agent-list problem: each session appends a stamped card to a shared log, so a peer can look up where another session runs.</p>
+  <pre><code># one layer
+bash whereami.sh | grep '^agent\.'
+
+# as a json object
+bash whereami.sh | jq -Rn '[inputs | capture("(?&lt;k&gt;[^=]+)=(?&lt;v&gt;.*)")] | from_entries'
+
+# append-only session card: one line per run
+printf '%s %s\n' "$(date -Is)" "$(bash whereami.sh | paste -sd' ')" &gt;&gt; .skogai/state/whereami.log</code></pre>
+</section>
+
+<section>
+  <div class="code-block">
+    <div class="code-bar"><h2>The script</h2><button type="button" id="copy-script">Copy</button></div>
+    <p>Bash, no dependencies beyond coreutils. <code>systemd-detect-virt</code> and <code>git</code> are used when present.</p>
+    <pre><code id="script-src">#!/usr/bin/env bash
+# whereami: answer "what environment is this agent running in?" as key=value lines.
+# every key always prints; "unknown" is the default, never a missing line.
+# reads only: no network, no writes, never prints secrets.
+
+kv() { printf '%s=%s\n' "$1" "${2:-unknown}"; }
+has() { command -v "$1" &gt;/dev/null 2&gt;&amp;1; }
+
+# --- machine -----------------------------------------------------------
+os_id=unknown
+[ -r /etc/os-release ] &amp;&amp; os_id=$(. /etc/os-release; echo "${ID:-unknown}")
+kv machine.host "$(hostname 2&gt;/dev/null || cat /etc/hostname 2&gt;/dev/null)"
+kv machine.os "$(uname -s 2&gt;/dev/null)"
+kv machine.distro "$os_id"
+kv machine.kernel "$(uname -r 2&gt;/dev/null)"
+kv machine.arch "$(uname -m 2&gt;/dev/null)"
+kv machine.user "$(id -un 2&gt;/dev/null)"
+
+# --- isolation: container / vm / wsl ------------------------------------
+container=none
+if has systemd-detect-virt; then
+  c=$(systemd-detect-virt --container 2&gt;/dev/null); [ -n "$c" ] &amp;&amp; container=$c
+fi
+if [ "$container" = none ]; then
+  if [ -f /.dockerenv ]; then container=docker
+  elif [ -f /run/.containerenv ]; then container=podman
+  elif grep -qaE 'docker|kubepods|containerd|lxc' /proc/1/cgroup 2&gt;/dev/null; then container=cgroup-hint
+  fi
+fi
+vm=none
+if has systemd-detect-virt; then
+  v=$(systemd-detect-virt --vm 2&gt;/dev/null); [ -n "$v" ] &amp;&amp; vm=$v
+fi
+wsl=no
+{ [ -n "$WSL_DISTRO_NAME" ] || grep -qi microsoft /proc/version 2&gt;/dev/null; } &amp;&amp; wsl=${WSL_DISTRO_NAME:-yes}
+kv isolation.container "$container"
+kv isolation.vm "$vm"
+kv isolation.wsl "$wsl"
+kv isolation.pid1 "$(cat /proc/1/comm 2&gt;/dev/null)"
+
+# --- access: how a human reaches this shell -----------------------------
+ssh=no; [ -n "$SSH_CONNECTION" ] &amp;&amp; ssh=yes
+kv access.ssh "$ssh"
+kv access.multiplexer "$( [ -n "$TMUX" ] &amp;&amp; echo tmux || { [ -n "$ZELLIJ" ] &amp;&amp; echo zellij; } || { [ -n "$STY" ] &amp;&amp; echo screen; } || echo none)"
+kv access.terminal "${TERM_PROGRAM:-${TERM:-none}}"
+
+# --- agent harness -------------------------------------------------------
+agent=none; [ "$CLAUDECODE" = 1 ] &amp;&amp; agent=claude-code
+kv agent.harness "$agent"
+kv agent.entrypoint "${CLAUDE_CODE_ENTRYPOINT}"           # observed: claude-desktop, cli
+kv agent.remote "${CLAUDE_CODE_REMOTE:-false}"            # set in cloud (web) sessions
+kv agent.version "$(basename "$(dirname "$(dirname "${CLAUDE_CODE_EXECPATH:-/x/unknown/x/x}")")")"
+kv agent.sdk_version "${CLAUDE_AGENT_SDK_VERSION}"
+kv agent.desktop_version "${CLAUDE_CODE_DESKTOP_APP_VERSION:-none}"
+kv agent.session_id "${CLAUDE_CODE_SESSION_ID}"
+kv agent.host_session_id "${CLAUDE_CODE_HOST_SESSION_ID:-none}"
+kv agent.child_session "${CLAUDE_CODE_CHILD_SESSION:-0}"
+kv agent.attended "${CLAUDE_CODE_SESSION_ATTENDED:-unknown}"
+kv agent.effort "${CLAUDE_EFFORT}"
+kv agent.messaging_socket "$( [ -S "$CLAUDE_CODE_MESSAGING_SOCKET" ] &amp;&amp; echo present || echo none)"
+
+# --- workspace -----------------------------------------------------------
+kv workspace.cwd "$PWD"
+case "$PWD" in
+  */scratch-workspaces/*) ws=scratch ;;
+  */worktrees/*|*/.worktrees/*) ws=worktree ;;
+  *) ws=folder ;;
+esac
+kv workspace.kind "$ws"
+if has git &amp;&amp; git rev-parse --is-inside-work-tree &gt;/dev/null 2&gt;&amp;1; then
+  kv workspace.git yes
+  kv workspace.git_root "$(git rev-parse --show-toplevel)"
+  kv workspace.git_branch "$(git branch --show-current 2&gt;/dev/null)"
+  kv workspace.git_linked_worktree "$( [ "$(git rev-parse --git-dir)" != "$(git rev-parse --git-common-dir)" ] &amp;&amp; echo yes || echo no)"
+else
+  kv workspace.git no
+  kv workspace.git_root none
+  kv workspace.git_branch none
+  kv workspace.git_linked_worktree no
+fi</code></pre>
+  </div>
+</section>
+
+<footer>Written by Claude (Opus 5.5) from a live run on 2026-10-26. Variable names reflect Claude Code 2.1.308 and desktop app 3.6556.2.</footer>
+</main>
+
+<script>
+(function () {
+  var btn = document.getElementById('copy-script');
+  var src = document.getElementById('script-src');
+  btn.addEventListener('click', function () {
+    try {
+      navigator.clipboard.writeText(src.textContent).then(
+        function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1600); },
+        function () { btn.textContent = 'Select and copy'; }
+      );
+    } catch (e) { btn.textContent = 'Select and copy'; }
+  });
+})();
+</script>
