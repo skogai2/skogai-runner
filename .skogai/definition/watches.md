@@ -1,13 +1,15 @@
 ---
-description: the paths a module reads and reacts to when they change
-requires: [name, state, module]
+description: subscribing to what a module writes, by leaving a named function in its folder
+requires: [name, owns, writes]
 ---
 
 # watches
 
-`watches` is a [[state]] key that lists paths. when a watched path changes,
-the [[module]] reacts. a module reading another one's output is the only way
-modules interact, and watching is how that reading happens.
+to watch a module, put a named function in the folder it [[owns]] for that:
+`logs/<type>/<name>.sh`. that file says "here is the name of my function
+to call".
 
-what a module watches is part of its input, along with everything in its
-[[context]].
+when the owner [[writes]] something of a type, it calls every name in that
+type's folder. the writer publishes, the watchers subscribe, and the owned
+folder is the hub between them. neither side knows who the other is; they
+only share the folder.
