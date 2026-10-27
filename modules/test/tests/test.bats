@@ -62,3 +62,13 @@ BATS
     assert_output_has "after: skipped, broke failed"
     refute_output_has "after: own"
 }
+
+@test "run: without a working sandbox no test runs, exit 2" {
+    fixture sandbox <<<$'---\ntype: module\nname: sandbox\ndescription: broken\ncommand: argc.sh\nrequires: [core]\n---'
+    printf '#!/usr/bin/env bash\n# @cmd\nnew() { exit 1; }\neval "$(argc --argc-eval "$0" "$@")"\n' >"$FIX/sandbox/argc.sh"
+    testee base "" true
+    run skogai test run base --only
+    assert_status 2
+    assert_output_has "no test can run"
+    refute_output_has "base: own"
+}

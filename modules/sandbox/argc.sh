@@ -20,12 +20,12 @@ set -euo pipefail
 # SKOGAI_* config from outside, the two install dirs, the built skogai first
 # on PATH, cd to repo.
 # a dir made by an earlier sandbox is replaced; any other existing one is refused.
-# @arg dir  default $TMPDIR/skogai
+# @arg dir  default <local dir>/tmp/sandbox: one per repo, and per worktree
 # @flag --empty  only the dirs and layers: no module installed, nothing built
 # @option --shell[bash|zsh|fish]  env lines for this shell, default from $SHELL
 new() {
     local dir shell name src v lines=""
-    dir="${argc_dir:-${TMPDIR:-/tmp}/skogai}"
+    dir="${argc_dir:-$SKOGAI_LOCAL_DIR/tmp/sandbox}"
     [[ $dir == /* ]] || dir="${ARGC_PWD:-$PWD}/$dir"
     if [[ -f $dir/.sandbox ]]; then
         rm -rf "$dir"

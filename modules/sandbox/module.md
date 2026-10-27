@@ -22,4 +22,5 @@ place to try the built skogai without touching the real install.
 
 `<dir>/run <cmd>...` runs one command inside it, for callers whose env does
 not persist between commands. a dir made by an earlier sandbox is replaced;
-any other existing one is refused.
+any other existing one is refused. without a dir it is `tmp/sandbox` in the
+local dir (`.skogai` at the git root), so each worktree gets its own.

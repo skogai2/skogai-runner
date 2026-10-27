@@ -296,15 +296,18 @@ _module_bases() {
     for p in "${p[@]}"; do [[ -z $p ]] || printf 'source\t%s\n' "$p"; done
 }
 
-# "name<TAB>layer<TAB>dir" for every module, the first by a name wins
-_modules() {
+# "name<TAB>layer<TAB>dir" for every module, the first by a name wins:
+# the scan made once before a command runs
+_modules() { [[ -z $MODULES ]] || printf '%s\n' "$MODULES"; }
+
+_scan_modules() {
     local -A seen
     local layer base d name
     while IFS=$'\t' read -r layer base; do
         for d in "$base"/*/; do
             [[ -f $d/module.md ]] || continue
-            d="$(realpath "$d")"
-            name="$(basename "$d")"
+            d="$(cd "$d" && pwd -P)"
+            name="${d##*/}"
             [[ -z ${seen[$name]:-} ]] || continue
             seen[$name]=1
             printf '%s\t%s\t%s\n' "$name" "$layer" "$d"
@@ -454,4 +457,5 @@ _choice_module() { _modules | cut -f1; }
 _choice_installed() { _modules | awk -F'\t' '$2 != "source" { print $1 }'; }
 _choice_source() { _module_bases | awk -F'\t' '$1 == "source" { print $2 }' | while read -r p; do ls "$p"; done | sort -u; }
 
+MODULES="$(_scan_modules)"
 eval "$(argc --argc-eval "$0" "$@")"

@@ -27,6 +27,8 @@ run() {
     else
         mapfile -t order < <(_closure "${argc_module[@]}")
     fi
+    # every test stands on an empty sandbox: without one no result would mean anything
+    _sandbox_works || { echo "skogai sandbox new --empty fails, no test can run" >&2; exit 2; }
     core="$(_dir core)"
     for name in "${order[@]}"; do
         dir="$(_dir "$name")" || { echo "no module: $name" >&2; failed[$name]=1; rc=1; continue; }
@@ -54,6 +56,14 @@ run() {
 # @arg module*[`_choice_module`]  default every module found
 closure() {
     _closure "${argc_module[@]}"
+}
+
+_sandbox_works() {
+    local tmp rc=0
+    tmp="$(mktemp -d)"
+    "$SKOGAI_BIN" sandbox new "$tmp/sandbox" --empty >/dev/null || rc=1
+    rm -rf "$tmp"
+    return "$rc"
 }
 
 # names in dependency order, depth first; a cycle is cut where it closes

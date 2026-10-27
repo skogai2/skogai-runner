@@ -45,3 +45,10 @@ load "$SKOGAI_TEST_HELPER"
     run "$S/run" skogai config get core.module.install --show-origin
     assert_output_has "$S/repo/skogai.toml	global"
 }
+
+@test "sandbox: without a dir it is tmp/sandbox in the local dir, one per repo" {
+    run --separate-stderr skogai sandbox new --empty --shell bash
+    assert_status 0
+    assert_output_has "export SKOGAI_LOCAL_DIR=$LOCAL/tmp/sandbox/repo/.skogai"
+    assert_file "$LOCAL/tmp/sandbox/.sandbox"
+}

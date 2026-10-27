@@ -14,7 +14,9 @@ config: {}
 
 a module is tested after everything it requires, and only if that passed:
 `skogai test run config` tests core, then config. a module whose
-requirement failed is skipped, and the run fails.
+requirement failed is skipped, and the run fails. every test stands on an
+empty sandbox, so a run whose sandbox can't be made stops before any test
+(exit 2) instead of failing whatever comes first.
 
 | command | |
 |---|---|
