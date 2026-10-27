@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# core's own behaviour: config layers and the module commands.
+# core's own behaviour: the module commands, defaults and env.
 
 load "$SKOGAI_TEST_HELPER"
 
@@ -11,55 +11,10 @@ fixture() {
     cat >"$FIX/$1/module.md"
 }
 
-@test "config: a module default resolves with its origin" {
-    run skogai config get core.module.install --show-origin
+@test "module defaults: every config: default, mounted under its module's name" {
+    run skogai module defaults core
     assert_status 0
-    assert_output_has "module:core	local"
-}
-
-@test "config: fold order module < system < global < local < module.local.md < env" {
-    mkdir -p "$SKOGAI_SYSTEM_DIR"
-    git config -f "$SKOGAI_SYSTEM_DIR/config" core.module.install system
-    run skogai config get core.module.install --show-origin
-    assert_output_has "system	system"
-    skogai config set --global core.module.install global
-    run skogai config get core.module.install --show-origin
-    assert_output_has "global	global"
-    skogai config set core.module.install local
-    run skogai config get core.module.install --show-origin
-    assert_output_has "local	local"
-    skogai module add core --apply >/dev/null 2>&1
-    skogai config set --module core core.module.install fromlocalmd
-    run skogai config get core.module.install --show-origin
-    assert_output_has "module:core.local	fromlocalmd"
-    SKOGAI_CORE_MODULE_INSTALL=env run skogai config get core.module.install --show-origin
-    assert_output_has "env:SKOGAI_CORE_MODULE_INSTALL	env"
-}
-
-@test "config: get of an unset key exits 1" {
-    run skogai config get no.such.key
-    assert_status 1
-}
-
-@test "config: set --module writes module.local.md under config:" {
-    skogai module add core --apply >/dev/null 2>&1
-    skogai config set --module core core.module.install global
-    run yq --front-matter=extract .config.module.install "$LOCAL/modules/core/module.local.md"
-    assert_output_has global
-}
-
-@test "config: set --module on a source module writes the local install dir" {
-    skogai config set --module core core.module.install global
-    run skogai config get core.module.install --show-origin
-    assert_output_has "module:core.local	global"
-    run yq --front-matter=extract .config.module.install "$LOCAL/modules/core/module.local.md"
-    assert_output_has global
-}
-
-@test "config: set --module refuses a key outside the module" {
-    skogai module add core --apply >/dev/null 2>&1
-    run skogai config set --module core other.key x
-    assert_status 2
+    assert_output_has "core.module.install	local"
 }
 
 @test "module ls: a source module is listed as source" {
@@ -87,8 +42,7 @@ fixture() {
 }
 
 @test "module add: core.module.install picks the default target" {
-    skogai config set core.module.install global
-    skogai module add core --apply >/dev/null 2>&1
+    SKOGAI_CORE_MODULE_INSTALL=global skogai module add core --apply >/dev/null 2>&1
     assert_file "$SKOGAI_CONFIG_DIR/modules/core/module.md"
 }
 
@@ -105,13 +59,12 @@ fixture() {
     assert_status 0
     run skogai greet hello skogix
     assert_output_has "hello, skogix"
-    skogai config set greet.greeting hej
-    run skogai greet hello skogix
+    SKOGAI_GREET_GREETING=hej run skogai greet hello skogix
     assert_output_has "hej, skogix"
 }
 
 @test "module new: refuses reserved, bad and existing names" {
-    run skogai module new config x
+    run skogai module new module x
     assert_status 2
     run skogai module new Bad x
     assert_status 2
@@ -174,6 +127,38 @@ SH
     assert_output_has "SKOGAI_MODULE_DIR=$FIX/envy"
     assert_output_has "SKOGAI_LOCAL_DIR=$LOCAL"
     assert_output_has "SKOGAI_ENVY_SOMEKEY=v"
+    SKOGAI_ENVY_SOMEKEY=w run skogai envy show
+    assert_output_has "SKOGAI_ENVY_SOMEKEY=w"
+}
+
+@test "env: an installed module's env: runs for every command, a found one's does not" {
+    fixture hooky <<'MD'
+---
+type: module
+name: hooky
+description: sets a key for everyone
+command: argc.sh
+env: env.sh
+requires: [core]
+---
+MD
+    printf '#!/usr/bin/env bash\necho "export SKOGAI_CORE_MODULE_INSTALL=global"\n' >"$FIX/hooky/env.sh"
+    cat >"$FIX/hooky/argc.sh" <<'SH'
+#!/usr/bin/env bash
+# @cmd
+show() { echo "install=${SKOGAI_CORE_MODULE_INSTALL:-unset}"; }
+eval "$(argc --argc-eval "$0" "$@")"
+SH
+    run skogai hooky show
+    assert_output_has "install=unset"
+    skogai module add hooky --apply >/dev/null 2>&1
+    assert_file "$LOCAL/modules/hooky/env.sh"
+    run skogai hooky show
+    assert_output_has "install=global"
+    run skogai module env core
+    assert_output_has "export SKOGAI_CORE_MODULE_INSTALL=global"
+    skogai module new late x >/dev/null 2>&1
+    assert_file "$SKOGAI_CONFIG_DIR/modules/late/module.md"
 }
 
 @test "module build: the built skogai lists, runs and completes every module" {
@@ -188,11 +173,11 @@ SH
     assert_file "$B/man/man1/skogai-module-build.1"
     run "$B/bin/skogai" --help
     assert_output_has "  config "
-    assert_output_has "  memory "
+    assert_output_has "  module "
     run "$B/bin/skogai" config get core.module.install
     assert_output_has local
-    run env ARGC_COMPLETIONS_PATH="$B/completions" argc --argc-compgen generic "" skogai memory ""
-    assert_output_has stale
+    run env ARGC_COMPLETIONS_PATH="$B/completions" argc --argc-compgen generic "" skogai config ""
+    assert_output_has unset
     run env ARGC_COMPLETIONS_PATH="$B/completions" argc --argc-compgen generic "" skogai config get ""
     assert_output_has core.module.install
 }
@@ -223,11 +208,11 @@ SH
     assert_output_has "export SKOGAI_LOCAL_DIR=$S/repo/.skogai"
     assert_output_has "export PATH=$S/repo/.skogai/tmp/skogai/bin:"
     assert_output_has "cd $S/repo"
-    assert_file "$S/repo/.skogai/modules/memory/module.md"
+    assert_file "$S/repo/.skogai/modules/config/module.md"
     assert_file "$S/repo/.skogai/modules/lonely/module.md"
     eval "$output"
     run skogai module ls
-    assert_output_has "memory       local"
+    assert_output_has "config       local"
     refute_output_has source
 }
 
@@ -246,53 +231,16 @@ SH
 @test "module sandbox: run runs one command inside it, state kept between runs" {
     S="$BATS_TEST_TMPDIR/sb"
     skogai module sandbox "$S" >/dev/null 2>&1
-    run env SKOGAI_RUNNER_MODEL=leak "$S/run" skogai config get runner.model --show-origin
-    assert_output_has "module:runner"
+    run env SKOGAI_CORE_MODULE_INSTALL=leak "$S/run" skogai config get core.module.install --show-origin
+    assert_output_has "module:core	local"
     run "$S/run" pwd
     assert_output_has "$S/repo"
     "$S/run" skogai config set core.module.install global
     run "$S/run" skogai config get core.module.install --show-origin
-    assert_output_has "local	global"
+    assert_output_has "$S/repo/skogai.toml	global"
 }
 
-@test "config: unset removes a key from its layer, a missing one exits 1" {
-    skogai config set some.key v
-    skogai config set --global some.key g
-    skogai config unset some.key
-    run skogai config get some.key --show-origin
-    assert_output_has "global	g"
-    skogai config unset --global some.key
-    run skogai config get some.key
-    assert_status 1
-    run skogai config unset some.key
-    assert_status 1
-}
-
-@test "config: unset --module drops the override, the default is back" {
-    skogai config set --module core core.module.install global
-    skogai config unset --module core core.module.install
-    run skogai config get core.module.install --show-origin
-    assert_output_has "module:core	local"
-}
-
-@test "config: a null in module.local.md removes the default" {
-    skogai config set --module core core.module.install null
-    run skogai config get core.module.install
-    assert_status 1
-}
-
-@test "config: list and env print every resolved key" {
-    skogai config set some.key v
-    run skogai config list --show-origin
-    assert_status 0
-    assert_output_has "local	some.key=v"
-    assert_output_has "module:core	core.module.install=local"
-    run skogai config env
-    assert_output_has "export SKOGAI_SOME_KEY=v"
-    assert_output_has "export SKOGAI_CORE_MODULE_INSTALL=local"
-}
-
-@test "config: a list default is one key, one item per line" {
+@test "module env: a list default is one key, one item per line" {
     fixture tagged <<'MD'
 ---
 type: module
@@ -303,63 +251,36 @@ config:
   tags: [a, b]
 ---
 MD
-    run skogai config get tagged.tags
+    run skogai module defaults tagged
     assert_status 0
-    [[ $output == $'a\nb' ]]
-    run skogai config list
-    assert_output_has $'tagged.tags=a\ntagged.tags=b'
+    [[ $output == $'tagged.tags\ta\x1fb' ]]
     run skogai module env tagged
     assert_output_has "export SKOGAI_TAGGED_TAGS=$'a\\nb'"
 }
 
-@test "config: --file is a layer with its .local.md after it, --scope mounts it" {
-    printf -- '---\nsection:\n  key: fromfile\n---\nbody\n' >x.md
-    run skogai config get section.key --file x.md --show-origin
-    assert_output_has "file:x.md	fromfile"
-    skogai config set --file x.md section.key fromlocal
-    run skogai config get section.key --file x.md --show-origin
-    assert_output_has "file:x.local.md	fromlocal"
-    [[ $(tail -1 x.md) == body ]]
-    run skogai config get s.section.key --file x.md --scope s
-    assert_output_has fromlocal
-    run skogai config set --file x.md --scope s other.key v
-    assert_status 2
-}
-
-@test "config: files lists every layer and whether it is there" {
-    skogai config set some.key v
-    run skogai config files
-    assert_status 0
-    assert_output_has "local	$LOCAL/config	present"
-    assert_output_has "global	$SKOGAI_CONFIG_DIR/config	missing"
-    assert_output_has "system	$SKOGAI_SYSTEM_DIR/config	missing"
-}
-
 @test "local dir: the git root's .skogai from a subdir, pwd's outside git" {
     mkdir -p sub/deeper
-    (cd sub/deeper && skogai config set some.key v)
-    assert_file "$LOCAL/config"
-    run bash -c 'cd sub && "$SKOGAI_BIN" module env memory'
+    run bash -c 'cd sub/deeper && "$SKOGAI_BIN" module env config'
     assert_output_has "export SKOGAI_LOCAL_DIR=$LOCAL"
     mkdir "$BATS_TEST_TMPDIR/nogit"
     cd "$BATS_TEST_TMPDIR/nogit"
-    run skogai module env memory
+    run skogai module env config
     assert_output_has "export SKOGAI_LOCAL_DIR=$BATS_TEST_TMPDIR/nogit/.skogai"
 }
 
 @test "dispatch: an unknown command fails and names the known ones" {
     run skogai nosuch
     [[ $status -ne 0 ]]
-    assert_output_has "subcommands: config, module"
+    assert_output_has "subcommands: module"
 }
 
 @test "module show and command: where it is, its manifest, its argc script" {
-    run skogai module show memory
+    run skogai module show config
     assert_status 0
-    [[ ${lines[0]} == source$'\t'*/memory ]]
-    assert_output_has "name: memory"
-    run skogai module command memory
-    [[ $output == */memory/argc.sh ]]
+    [[ ${lines[0]} == source$'\t'*/config ]]
+    assert_output_has "name: config"
+    run skogai module command config
+    [[ $output == */config/argc.sh ]]
     fixture bare <<<$'---\ntype: module\nname: bare\ndescription: no command\nrequires: [core]\n---'
     run skogai module command bare
     assert_status 1

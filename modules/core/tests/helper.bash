@@ -14,7 +14,11 @@ skogai_setup() {
     for v in $(compgen -e SKOGAI_); do
         case "$v" in SKOGAI_BIN | SKOGAI_MODULE_PATH | SKOGAI_TEST_*) ;; *) unset "$v" ;; esac
     done
-    export SKOGAI_SYSTEM_DIR="$BATS_TEST_TMPDIR/system"
+    # mise's config is a layer too: its system, global and state dirs are the test's
+    unset MISE_OVERRIDE_CONFIG_FILENAMES MISE_ENV MISE_GLOBAL_CONFIG_FILE MISE_SYSTEM_CONFIG_FILE
+    export MISE_SYSTEM_CONFIG_DIR="$BATS_TEST_TMPDIR/system"
+    export MISE_CONFIG_DIR="$BATS_TEST_TMPDIR/mise"
+    export MISE_STATE_DIR="$BATS_TEST_TMPDIR/state"
     export SKOGAI_CONFIG_DIR="$BATS_TEST_TMPDIR/global"
     REPO="$BATS_TEST_TMPDIR/repo"
     LOCAL="$REPO/.skogai"

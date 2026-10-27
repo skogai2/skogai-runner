@@ -25,15 +25,15 @@ load "$SKOGAI_TEST_HELPER"
     assert_output_has "run me as"
 }
 
-@test "contract: config defaults resolve under its name" {
+@test "contract: config defaults are mounted under its name" {
     local keys key
     # leaves, a list being one leaf; the assignment fails the test if yq does
     keys="$(yq --front-matter=extract '.config // {} | .. | select(tag == "!!seq" or (tag != "!!map" and (parent | tag) != "!!seq")) | path | .[1:] | join(".")' "$(module_dir)/module.md")"
+    run skogai module defaults "$SKOGAI_TEST_MODULE"
+    assert_status 0
     while IFS= read -r key; do
         [[ -n $key ]] || continue
-        run skogai config get "$SKOGAI_TEST_MODULE.$key" --show-origin
-        assert_status 0
-        assert_output_has "module:$SKOGAI_TEST_MODULE"
+        assert_output_has "$SKOGAI_TEST_MODULE.$key	"
     done <<<"$keys"
 }
 
