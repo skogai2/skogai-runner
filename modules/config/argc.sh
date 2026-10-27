@@ -23,11 +23,10 @@ _skogai_files() {
     while read -r name _; do files+=":skogai.$name.toml"; done < <(MISE_OVERRIDE_CONFIG_FILENAMES=skogai.toml "$SKOGAI_BIN" module ls)
     echo "$files"
 }
-case "${MISE_OVERRIDE_CONFIG_FILENAMES:-}" in
-*skogai.toml*) ;;
-"") export MISE_OVERRIDE_CONFIG_FILENAMES="$(_skogai_files):$MISE_FILES" ;;
-*) export MISE_OVERRIDE_CONFIG_FILENAMES="$(_skogai_files):$MISE_OVERRIDE_CONFIG_FILENAMES" ;;
-esac
+if [[ ${MISE_OVERRIDE_CONFIG_FILENAMES:-} != *skogai.toml* ]]; then
+    SKOGAI_FILES="$(_skogai_files)"
+    export MISE_OVERRIDE_CONFIG_FILENAMES="$SKOGAI_FILES:${MISE_OVERRIDE_CONFIG_FILENAMES:-$MISE_FILES}"
+fi
 
 # joins the items of a list value; `get` prints one item per line
 SEP=$'\x1f'
