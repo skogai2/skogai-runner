@@ -16,10 +16,17 @@ set -euo pipefail
 
 # mise's own project files, in its order, after skogai's
 MISE_FILES='.config/mise/conf.d/*.toml:.config/mise/config.toml:.config/mise.toml:mise/config.toml:mise.toml:.mise/config.toml:.mise.toml:.config/mise/config.local.toml:.config/mise.local.toml:mise/config.local.toml:mise.local.toml:.mise/config.local.toml:.mise.local.toml'
+# skogai.toml, then skogai.<module>.toml of every module: mise does not expand a glob here
+_skogai_files() {
+    local name files=skogai.toml
+    # already set, the env: hook of this module ls doesn't come back here
+    while read -r name _; do files+=":skogai.$name.toml"; done < <(MISE_OVERRIDE_CONFIG_FILENAMES=skogai.toml "$SKOGAI_BIN" module ls)
+    echo "$files"
+}
 case "${MISE_OVERRIDE_CONFIG_FILENAMES:-}" in
 *skogai.toml*) ;;
-"") export MISE_OVERRIDE_CONFIG_FILENAMES="skogai.toml:skogai.*.toml:$MISE_FILES" ;;
-*) export MISE_OVERRIDE_CONFIG_FILENAMES="skogai.toml:skogai.*.toml:$MISE_OVERRIDE_CONFIG_FILENAMES" ;;
+"") export MISE_OVERRIDE_CONFIG_FILENAMES="$(_skogai_files):$MISE_FILES" ;;
+*) export MISE_OVERRIDE_CONFIG_FILENAMES="$(_skogai_files):$MISE_OVERRIDE_CONFIG_FILENAMES" ;;
 esac
 
 # joins the items of a list value; `get` prints one item per line

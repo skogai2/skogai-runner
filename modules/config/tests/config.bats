@@ -70,7 +70,7 @@ load "$SKOGAI_TEST_HELPER"
     assert_output_has "$REPO/skogai.toml	some.key=v"
     assert_output_has "module:core	core.module.install=local"
     run skogai config env
-    assert_output_has "export MISE_OVERRIDE_CONFIG_FILENAMES=skogai.toml:skogai.\*.toml:"
+    assert_output_has "export MISE_OVERRIDE_CONFIG_FILENAMES=skogai.toml:skogai.config.toml:skogai.core.toml:"
     assert_output_has "export SKOGAI_SOME_KEY=v"
     refute_output_has "SKOGAI_CORE_MODULE_INSTALL"
 }
