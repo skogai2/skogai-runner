@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# run with `skogai module test {{name}}`: the contract first, then these.
+# run with `skogai test run {{name}}`: what it requires first, then its contract and these.
 
 load "$SKOGAI_TEST_HELPER"
 

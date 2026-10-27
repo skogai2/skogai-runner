@@ -1,30 +1,26 @@
 # the base every module's tests stand on: `load "$SKOGAI_TEST_HELPER"` at the
-# top of a .bats file. each test gets an empty git repo as its cwd and its own
-# system, global and local layers, so nothing outside BATS_TEST_TMPDIR is
-# read or written. a file that defines its own setup() calls skogai_setup.
+# top of a .bats file. each test gets an empty sandbox: its repo as cwd, its
+# own global and local layers, and mise's system, global and state dirs, so
+# nothing outside BATS_TEST_TMPDIR is read or written. a file that defines its
+# own setup() calls skogai_setup.
 #
-# set by `skogai module test`: SKOGAI_BIN, SKOGAI_MODULE_PATH,
+# set by `skogai test run`: SKOGAI_BIN, SKOGAI_MODULE_PATH,
 # SKOGAI_TEST_MODULE (the module under test), SKOGAI_TEST_HELPER (this file).
 
 skogai_setup() {
-    local v
+    local lines
     # run --separate-stderr
     bats_require_minimum_version 1.5.0
-    # config from the caller's env would shadow every layer
-    for v in $(compgen -e SKOGAI_); do
-        case "$v" in SKOGAI_BIN | SKOGAI_MODULE_PATH | SKOGAI_TEST_*) ;; *) unset "$v" ;; esac
-    done
     # mise's config is a layer too: its system, global and state dirs are the test's
     unset MISE_OVERRIDE_CONFIG_FILENAMES MISE_ENV MISE_GLOBAL_CONFIG_FILE MISE_SYSTEM_CONFIG_FILE
     export MISE_SYSTEM_CONFIG_DIR="$BATS_TEST_TMPDIR/system"
     export MISE_CONFIG_DIR="$BATS_TEST_TMPDIR/mise"
     export MISE_STATE_DIR="$BATS_TEST_TMPDIR/state"
-    export SKOGAI_CONFIG_DIR="$BATS_TEST_TMPDIR/global"
-    REPO="$BATS_TEST_TMPDIR/repo"
-    LOCAL="$REPO/.skogai"
-    mkdir -p "$REPO"
-    cd "$REPO" || return 1
-    git init -q
+    # config from the caller's env would shadow every layer; the sandbox unsets it
+    lines="$(skogai sandbox new "$BATS_TEST_TMPDIR/sandbox" --empty --shell bash)" || return 1
+    eval "$(grep -v '^unset SKOGAI_TEST_' <<<"$lines")"
+    REPO="$PWD"
+    LOCAL="$SKOGAI_LOCAL_DIR"
 }
 
 setup() { skogai_setup; }
@@ -32,6 +28,14 @@ setup() { skogai_setup; }
 # modules call `skogai <other>`, so it is on PATH as well
 PATH="$(dirname "$SKOGAI_BIN"):$PATH"
 skogai() { "$SKOGAI_BIN" "$@"; }
+
+# a module source dir of our own, first on the path: fixture <name> <<<"$module_md"
+fixture() {
+    FIX="$BATS_TEST_TMPDIR/sources"
+    export SKOGAI_MODULE_PATH="$FIX:$SKOGAI_MODULE_PATH"
+    mkdir -p "$FIX/$1"
+    cat >"$FIX/$1/module.md"
+}
 
 # the source dir of the module under test, or of $1
 module_dir() { skogai module show "${1:-$SKOGAI_TEST_MODULE}" | awk -F"\t" "NR == 1 { print \$2 }"; }

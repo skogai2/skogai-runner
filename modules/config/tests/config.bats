@@ -3,14 +3,6 @@
 
 load "$SKOGAI_TEST_HELPER"
 
-# a module source dir of our own, first on the path
-fixture() {
-    FIX="$BATS_TEST_TMPDIR/sources"
-    export SKOGAI_MODULE_PATH="$FIX:$SKOGAI_MODULE_PATH"
-    mkdir -p "$FIX/$1"
-    cat >"$FIX/$1/module.md"
-}
-
 @test "config: a module default resolves with its origin" {
     run skogai config get core.module.install --show-origin
     assert_status 0
@@ -78,7 +70,7 @@ fixture() {
     assert_output_has "$REPO/skogai.toml	some.key=v"
     assert_output_has "module:core	core.module.install=local"
     run skogai config env
-    assert_output_has "export MISE_OVERRIDE_CONFIG_FILENAMES=skogai.toml:skogai.\*.toml:"
+    assert_output_has "export MISE_OVERRIDE_CONFIG_FILENAMES=skogai.toml:skogai.config.toml:skogai.core.toml:"
     assert_output_has "export SKOGAI_SOME_KEY=v"
     refute_output_has "SKOGAI_CORE_MODULE_INSTALL"
 }
