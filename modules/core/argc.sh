@@ -60,38 +60,10 @@ module::command_of() {
     echo "$1/$cmd"
 }
 
-# @cmd run modules' tests with bats: the contracts of what it requires, then the module's own tests/
-#
-# every module you require runs its contract against you: core's
-# tests/contract.bats, and tests/contract.bats of each module in `requires`
-# that has one. its own tests/*.bats, but its contract.bats, run after; they
-# load core's tests/helper.bash for an isolated repo and layers.
-# tests, contracts and the helper come from the source when there is one, else where it is found.
-# @arg module*[`_choice_module`]  default every module found
-# @option --filter  only tests whose name matches this regex
-module::test() {
-    : "${SKOGAI_BIN:?run me as skogai module test}"
-    command -v bats >/dev/null || { echo "bats is not on PATH" >&2; exit 2; }
-    local core name dir r rdir rc=0 files names=("${argc_module[@]}")
-    core="$(_source core)" || IFS=$'\t' read -r _ _ core < <(_module core)
-    [[ ${#names[@]} -gt 0 ]] || mapfile -t names < <(_modules | cut -f1)
-    for name in "${names[@]}"; do
-        dir="$(_source "$name")" || IFS=$'\t' read -r _ _ dir < <(_module "$name") ||
-            { echo "no module: $name" >&2; rc=1; continue; }
-        files=("$core/tests/contract.bats")
-        while IFS= read -r r; do
-            [[ -n $r && $r != core ]] || continue
-            rdir="$(_source "$r")" || IFS=$'\t' read -r _ _ rdir < <(_module "$r") || continue
-            [[ ! -f $rdir/tests/contract.bats ]] || files+=("$rdir/tests/contract.bats")
-        done < <(_field "$dir/module.md" '.requires[]')
-        [[ ! -d $dir/tests ]] || mapfile -t -O "${#files[@]}" files < <(find "$dir/tests" -name '*.bats' ! -path "$dir/tests/contract.bats" | sort)
-        echo "# $name" >&2
-        # the module under test is a source in its isolated repo, wherever it was found
-        SKOGAI_MODULE_PATH="$(dirname "$dir"):$MODULE_PATH" \
-            SKOGAI_TEST_MODULE="$name" SKOGAI_TEST_HELPER="$core/tests/helper.bash" \
-            bats ${argc_filter:+--filter "$argc_filter"} "${files[@]}" || rc=1
-    done
-    return "$rc"
+# @cmd path of a module's source dir, where it is installed from; exits 1 if it has none
+# @arg name![`_choice_module`]
+module::source() {
+    _source "$argc_name"
 }
 
 # @cmd build `skogai` for a shell: one argc file with every module, man pages, completions
@@ -145,73 +117,6 @@ module::build() {
         printf 'source %q\n' "$out/completions/skogai.$shell"
         ;;
     esac
-}
-
-# @cmd an empty skogai to try things in: own install dirs, every module installed, skogai built
-#
-# makes <dir>/global (the global install dir) and a git repo <dir>/repo, installs every module found from here into its
-# .skogai/modules (as `module add --apply` would, from its source when it has
-# one, else from where it was found) and builds skogai there.
-# prints the env lines that switch a shell into it: no SKOGAI_* config from
-# outside, the two install dirs, the built skogai first on PATH, cd to repo.
-# mise's own config is not swapped out: the config module's layers are mise's.
-# a dir made by an earlier sandbox is replaced; any other existing one is refused.
-# @arg dir  default $TMPDIR/skogai
-# @option --shell[bash|zsh|fish]  env lines for this shell, default from $SHELL
-module::sandbox() {
-    : "${SKOGAI_BIN:?run me as skogai module sandbox}"
-    local dir shell name src v lines
-    dir="${argc_dir:-${TMPDIR:-/tmp}/skogai}"
-    [[ $dir == /* ]] || dir="${ARGC_PWD:-$PWD}/$dir"
-    if [[ -f $dir/.sandbox ]]; then
-        rm -rf "$dir"
-    elif [[ -e $dir ]]; then
-        echo "exists and is not a sandbox: $dir" >&2
-        exit 2
-    fi
-    mkdir -p "$dir/global" "$dir/repo"
-    touch "$dir/.sandbox"
-    git -C "$dir/repo" init -q
-    shell="${argc_shell:-$(basename "${SHELL:-bash}")}"
-    # every run below sees only the sandbox's install dirs
-    sandboxed() {
-        (cd "$dir/repo" && SKOGAI_CONFIG_DIR="$dir/global" \
-            SKOGAI_LOCAL_DIR="$dir/repo/.skogai" "$SKOGAI_BIN" "$@")
-    }
-    local found
-    while IFS=$'\t' read -r name _ found; do
-        src="$(_source "$name")" || src="$found"
-        sandboxed module add "$src" --to local --apply >/dev/null
-    done < <(_modules)
-    lines="$(sandboxed module build --to local --shell "$shell")"
-    _sandbox_run "$dir" >"$dir/run"
-    chmod +x "$dir/run"
-    for v in $(compgen -e SKOGAI_); do
-        case "$v" in SKOGAI_BIN | SKOGAI_MODULE_PATH | SKOGAI_CONFIG_DIR | SKOGAI_LOCAL_DIR) continue ;; esac
-        if [[ $shell == fish ]]; then echo "set -e $v"; else echo "unset $v"; fi
-    done
-    for v in CONFIG_DIR:global LOCAL_DIR:repo/.skogai; do
-        if [[ $shell == fish ]]; then
-            printf 'set -gx SKOGAI_%s %q\n' "${v%%:*}" "$dir/${v#*:}"
-        else
-            printf 'export SKOGAI_%s=%q\n' "${v%%:*}" "$dir/${v#*:}"
-        fi
-    done
-    echo "$lines"
-    printf 'cd %q\n' "$dir/repo"
-}
-
-# <dir>/run of a sandbox: the same switch for one command, for callers whose
-# env does not persist between commands
-# shellcheck disable=SC2016 # generated code, expanded when it runs
-_sandbox_run() {
-    local b="$1/repo/.skogai/tmp/skogai"
-    printf '#!/usr/bin/env bash\n# run <cmd>... in the sandbox %s, a shell if none; made by skogai module sandbox\n' "$1"
-    printf 'for v in $(compgen -e SKOGAI_); do unset "$v"; done\n'
-    printf 'export SKOGAI_CONFIG_DIR=%q SKOGAI_LOCAL_DIR=%q\n' "$1/global" "$1/repo/.skogai"
-    printf 'export PATH=%q:"$PATH" MANPATH=%q:"${MANPATH:-}" ARGC_COMPLETIONS_PATH=%q:"${ARGC_COMPLETIONS_PATH:-}"\n' "$b/bin" "$b/man" "$b/completions"
-    printf 'cd %q || exit 2\n' "$1/repo"
-    printf 'exec "${@:-${SHELL:-bash}}"\n'
 }
 
 # @cmd check modules against the spec (docs/module.md), all found ones if none given

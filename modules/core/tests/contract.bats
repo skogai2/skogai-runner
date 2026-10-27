@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# what every module is held to, run for each by `skogai module test`
+# what every module is held to, run for each by `skogai test run`
 # with SKOGAI_TEST_MODULE set. the spec is docs/module.md.
 
 load "$SKOGAI_TEST_HELPER"

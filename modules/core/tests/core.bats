@@ -3,14 +3,6 @@
 
 load "$SKOGAI_TEST_HELPER"
 
-# a module source dir of our own, first on the path
-fixture() {
-    FIX="$BATS_TEST_TMPDIR/sources"
-    export SKOGAI_MODULE_PATH="$FIX:$SKOGAI_MODULE_PATH"
-    mkdir -p "$FIX/$1"
-    cat >"$FIX/$1/module.md"
-}
-
 @test "module defaults: every config: default, mounted under its module's name" {
     run skogai module defaults core
     assert_status 0
@@ -197,49 +189,6 @@ SH
     assert_file "$SKOGAI_CONFIG_DIR/tmp/skogai/bin/skogai"
 }
 
-@test "module sandbox: every module installed, skogai built, env lines into it" {
-    fixture lonely <<<$'---\ntype: module\nname: lonely\ndescription: only found, no command\nrequires: [core]\n---'
-    skogai module add "$FIX/lonely" --to global --apply >/dev/null 2>&1
-    rm -rf "$FIX/lonely"
-    S="$BATS_TEST_TMPDIR/sb"
-    run --separate-stderr skogai module sandbox "$S" --shell bash
-    assert_status 0
-    assert_output_has "export SKOGAI_CONFIG_DIR=$S/global"
-    assert_output_has "export SKOGAI_LOCAL_DIR=$S/repo/.skogai"
-    assert_output_has "export PATH=$S/repo/.skogai/tmp/skogai/bin:"
-    assert_output_has "cd $S/repo"
-    assert_file "$S/repo/.skogai/modules/config/module.md"
-    assert_file "$S/repo/.skogai/modules/lonely/module.md"
-    eval "$output"
-    run skogai module ls
-    assert_output_has "config       local"
-    refute_output_has source
-}
-
-@test "module sandbox: replaces an earlier sandbox, refuses any other dir" {
-    S="$BATS_TEST_TMPDIR/sb"
-    skogai module sandbox "$S" >/dev/null 2>&1
-    touch "$S/repo/leftover"
-    run skogai module sandbox "$S"
-    assert_status 0
-    [[ ! -e $S/repo/leftover ]]
-    mkdir -p "$BATS_TEST_TMPDIR/other"
-    run skogai module sandbox "$BATS_TEST_TMPDIR/other"
-    assert_status 2
-}
-
-@test "module sandbox: run runs one command inside it, state kept between runs" {
-    S="$BATS_TEST_TMPDIR/sb"
-    skogai module sandbox "$S" >/dev/null 2>&1
-    run env SKOGAI_CORE_MODULE_INSTALL=leak "$S/run" skogai config get core.module.install --show-origin
-    assert_output_has "module:core	local"
-    run "$S/run" pwd
-    assert_output_has "$S/repo"
-    "$S/run" skogai config set core.module.install global
-    run "$S/run" skogai config get core.module.install --show-origin
-    assert_output_has "$S/repo/skogai.toml	global"
-}
-
 @test "module env: a list default is one key, one item per line" {
     fixture tagged <<'MD'
 ---
@@ -259,6 +208,8 @@ MD
 }
 
 @test "local dir: the git root's .skogai from a subdir, pwd's outside git" {
+    # the default, not the sandbox's
+    unset SKOGAI_LOCAL_DIR
     mkdir -p sub/deeper
     run bash -c 'cd sub/deeper && "$SKOGAI_BIN" module env config'
     assert_output_has "export SKOGAI_LOCAL_DIR=$LOCAL"
@@ -345,22 +296,13 @@ MD
     assert_output_has "plain	error	module.md has no frontmatter map"
 }
 
-@test "module test: a failing test fails the run, --filter picks tests, an unknown module fails" {
-    fixture flaky <<<$'---\ntype: module\nname: flaky\ndescription: one test fails\nrequires: [core]\n---'
-    mkdir "$FIX/flaky/tests"
-    cat >"$FIX/flaky/tests/flaky.bats" <<'BATS'
-load "$SKOGAI_TEST_HELPER"
-@test "flaky: passes" { true; }
-@test "flaky: fails" { false; }
-BATS
-    run skogai module test flaky
-    assert_status 1
-    assert_output_has "not ok"
-    assert_output_has "flaky: fails"
-    run skogai module test flaky --filter "^flaky: passes"
+@test "module source: where a module is installed from, exit 1 without one" {
+    run skogai module source core
     assert_status 0
-    refute_output_has "contract:"
-    run skogai module test nosuch
+    [[ $output == "$(dirname "$SKOGAI_BIN")/../modules/core" || $output == "$(realpath "$(dirname "$SKOGAI_BIN")/../modules/core")" ]]
+    fixture lonely <<<$'---\ntype: module\nname: lonely\ndescription: x\nrequires: [core]\n---'
+    skogai module add "$FIX/lonely" --apply >/dev/null 2>&1
+    rm -rf "$FIX/lonely"
+    run skogai module source lonely
     assert_status 1
-    assert_output_has "invalid value `nosuch`"
 }

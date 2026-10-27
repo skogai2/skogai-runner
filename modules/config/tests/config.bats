@@ -3,14 +3,6 @@
 
 load "$SKOGAI_TEST_HELPER"
 
-# a module source dir of our own, first on the path
-fixture() {
-    FIX="$BATS_TEST_TMPDIR/sources"
-    export SKOGAI_MODULE_PATH="$FIX:$SKOGAI_MODULE_PATH"
-    mkdir -p "$FIX/$1"
-    cat >"$FIX/$1/module.md"
-}
-
 @test "config: a module default resolves with its origin" {
     run skogai config get core.module.install --show-origin
     assert_status 0
