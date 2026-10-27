@@ -442,10 +442,8 @@ _main() {
     tpl="$(dirname "$SELF")/templates/main.sh"
     sed '/^# >>> generated$/q' "$tpl"
     printf 'BIN=%q\nCORE=%q\ndeclare -A CMDS=()\n' "$SKOGAI_BIN" "$SELF"
-    for name in module; do
-        desc="$(argc --argc-export "$SELF" | N="$name" yq -p json '.subcommands[] | select(.name == strenv(N)) | .describe | split("\n") | .[0]')"
-        _forward "$name" "$desc"
-    done
+    desc="$(argc --argc-export "$SELF" | yq -p json '.subcommands[] | select(.name == "module") | .describe | split("\n") | .[0]')"
+    _forward module "$desc"
     while IFS=$'\t' read -r name layer dir; do
         [[ $name != core ]] || continue
         cmd="$(module::command_of "$dir")" || continue
