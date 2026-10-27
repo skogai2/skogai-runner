@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # skogai <module> <cmd>...: run a module's argc command with its env (`skogai module env`);
-# anything else goes to core
+# anything else goes to core, with core's env
 set -euo pipefail
 
 root="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/.." && pwd)"
@@ -9,7 +9,7 @@ core="$root/modules/core/argc.sh"
 export SKOGAI_BIN="$root/bin/skogai"
 
 case "${1:-}" in
-"" | -* | config | module | help) ;;
+"" | -* | module | help) ;;
 *)
     if cmd="$(argc --argc-run "$core" module command "$1" 2>/dev/null)"; then
         eval "$(argc --argc-run "$core" module env "$1")"
@@ -18,4 +18,5 @@ case "${1:-}" in
     fi
     ;;
 esac
+eval "$(argc --argc-run "$core" module env core)"
 exec argc --argc-run "$core" "$@"
