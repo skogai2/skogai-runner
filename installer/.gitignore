@@ -1,0 +1,4 @@
+/src/
+/pkg/
+/skogai/
+*.pkg.tar.*

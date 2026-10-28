@@ -1,0 +1,23 @@
+# skogai from this checkout's committed HEAD: `makepkg -si` here.
+# argc is AUR only; with argc from elsewhere (mise), `makepkg -d` skips the check
+pkgname=skogai
+pkgver=0
+pkgrel=1
+pkgdesc='skogai: modules over argc, layered like the FHS'
+arch=(any)
+license=(custom)
+depends=(bash git go-yq argc)
+optdepends=('mise: config layers through mise'
+            'bats: skogai test')
+source=("skogai::git+file://${startdir%/*}")
+sha256sums=(SKIP)
+
+pkgver() {
+    cd skogai
+    printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+package() {
+    cd skogai
+    installer/install.sh "$pkgdir" /usr
+}
