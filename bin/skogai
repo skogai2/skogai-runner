@@ -1,16 +1,48 @@
 #!/usr/bin/env bash
-# skogai <module> <cmd>...: run a module's argc command with its env (`skogai system env`);
-# anything else goes to core, with core's env
+# skogai: hands off to the nearest .skogai/bin/skogai, else runs here.
+# `skogai <name> <cmd>...` is skogai-<name> on PATH, else a module's command
+# with its env (`skogai system env`); anything else goes to core, with core's
+# env. core is the one in share/skogai/modules of this prefix: /usr, or a checkout
 set -euo pipefail
 
-root="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/.." && pwd)"
-export SKOGAI_MODULE_PATH="${SKOGAI_MODULE_PATH:+$SKOGAI_MODULE_PATH:}$root/modules"
-core="$root/modules/core/argc.sh"
-export SKOGAI_BIN="$root/bin/skogai"
+self="$(realpath "${BASH_SOURCE[0]}")"
+prefix="$(dirname "$(dirname "$self")")"
+
+# core's rule: SKOGAI_LOCAL_DIR, relative from the git root or pwd
+_local_dir() {
+    local d="${SKOGAI_LOCAL_DIR:-.skogai}"
+    [[ $d == /* ]] || d="$(git rev-parse --show-toplevel 2>/dev/null || pwd)/$d"
+    echo "$d"
+}
+
+# a runner hands back with SKOGAI_RUNNER set; it is not asked again
+if [[ -z ${SKOGAI_RUNNER:-} ]]; then
+    if [[ -n ${SKOGAI_LOCAL_DIR:-} ]]; then
+        runner="$(_local_dir)/bin/skogai"
+    elif runner="$(ARGC_SCRIPT_NAME=.skogai/bin/skogai argc --argc-script-path 2>/dev/null)"; then
+        SKOGAI_LOCAL_DIR="$(dirname "$(dirname "$runner")")"
+        export SKOGAI_LOCAL_DIR
+    fi
+    if [[ -x ${runner:-} && $(realpath "$runner") != "$self" ]]; then
+        exec "$runner" "$@"
+    fi
+fi
+unset SKOGAI_RUNNER
+
+export SKOGAI_BIN="$self"
+export SKOGAI_MODULE_PATH="${SKOGAI_MODULE_PATH:+$SKOGAI_MODULE_PATH:}$prefix/share/skogai/modules"
+PATH="$(_local_dir)/bin:${SKOGAI_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/skogai}/bin:$PATH"
+core="$prefix/share/skogai/modules/core"
+core="$core/$(yq --front-matter=extract '.command' "$core/module.md")"
 
 case "${1:-}" in
 "" | -* | system | help) ;;
 *)
+    if [[ $1 =~ ^[a-z][a-z0-9]*$ ]] && command -v "skogai-$1" >/dev/null; then
+        name="$1"
+        shift
+        exec "skogai-$name" "$@"
+    fi
     if cmd="$(argc --argc-run "$core" system command "$1" 2>/dev/null)"; then
         eval "$(argc --argc-run "$core" system env "$1")"
         shift

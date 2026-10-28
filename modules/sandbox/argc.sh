@@ -71,11 +71,11 @@ new() {
 # env does not persist between commands
 # shellcheck disable=SC2016 # generated code, expanded when it runs
 _run() {
-    local b="$1/repo/.skogai/tmp/skogai"
+    local l="$1/repo/.skogai" b="$1/repo/.skogai/tmp/skogai"
     printf '#!/usr/bin/env bash\n# run <cmd>... in the sandbox %s, a shell if none; made by skogai sandbox new\n' "$1"
     printf 'for v in $(compgen -e SKOGAI_); do unset "$v"; done\n'
     printf 'export SKOGAI_CONFIG_DIR=%q SKOGAI_LOCAL_DIR=%q\n' "$1/global" "$1/repo/.skogai"
-    printf 'export PATH=%q:"$PATH" MANPATH=%q:"${MANPATH:-}" ARGC_COMPLETIONS_PATH=%q:"${ARGC_COMPLETIONS_PATH:-}"\n' "$b/bin" "$b/man" "$b/completions"
+    printf 'export PATH=%q:"$PATH" MANPATH=%q:"${MANPATH:-}" ARGC_COMPLETIONS_PATH=%q:"${ARGC_COMPLETIONS_PATH:-}"\n' "$l/bin" "$b/man" "$b/completions"
     printf 'cd %q || exit 2\n' "$1/repo"
     printf 'exec "${@:-${SHELL:-bash}}"\n'
 }

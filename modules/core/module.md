@@ -16,19 +16,51 @@ config:
 # core
 
 the module every other one stands on. `skogai system` is its command;
-`skogai core ...` is the same thing spelled out. what a module
-is, how it is found, installed, configured and run: `docs/module.md` in
-skogai-runner.
+`skogai core ...` is the same thing spelled out.
+
+## running
+
+`bin/skogai` is the binary, `/usr/bin/skogai` once installed. it reads one
+thing from here: `command:`, core's argc script, from the
+`share/skogai/modules/core` of its own prefix. from a checkout that is
+`share/skogai/modules`, a link to `modules/`.
+
+1. the nearest `.skogai/bin/skogai` up from here is handed off to (argc's
+   `ARGC_SCRIPT_NAME`), and its `.skogai` is the local dir. with
+   `SKOGAI_LOCAL_DIR` set, it is that dir's `bin/skogai` or none.
+2. `skogai <name> ...` is `skogai-<name>` on PATH, the local and global
+   `bin/` first, like git: any executable. `system add` writes one for every
+   module with a command.
+3. else a module found by that name runs its `command:` with
+   `system env <name>`; anything else is core's.
+
+## a module
+
+a directory with a `module.md`; `system check` is the spec, and
+`tests/contract.bats` what every module is held to.
+
+| field | read by |
+|---|---|
+| `type`, `name` | `check` only; the name is the directory's |
+| `description` | `ls`, and the help `build` makes |
+| `command` | dispatch, `command`, `build`, `add`; checked to parse with argc |
+| `env` | run before every command once the module is installed |
+| `tools` | `show` and `add` say what is missing, `check` warns |
+| `requires` | `check` (everything but core requires core), `test`'s order |
+| `files` | what `add` copies beside `module.md`, the command and `env` |
+| `config` | the defaults of its keys, below |
+
+the markdown under the frontmatter is for people: nothing reads it.
 
 | command | |
 |---|---|
 | `system ls` | every module found, its layer and description |
 | `system show <name>` | its manifest, where it is, what it is missing |
 | `system check [name\|path]...` | check modules against the spec |
-| `system add <name\|path> [--to] [--apply]` | copy a module into `.skogai/modules` or the global dir |
+| `system add <name\|path> [--to] [--apply]` | copy a module into `.skogai/modules` or the global dir, and its `bin/skogai-<name>` |
 | `system diff <name>` | an installed copy against its source |
 | `system new <name> <description> [--to]` | scaffold from `templates/module/` |
-| `system build [--to] [--shell]` | generate `skogai` for a shell: one argc file over every module, man pages, completions |
+| `system build [--to] [--shell]` | write `bin/skogai`, the runner handed off to (one argc file over every module), and man pages and completions in `tmp/skogai` |
 | `system env <name>` | the env a module's command runs with |
 | `system defaults [name]...` | every `config:` default, mounted under its module's name |
 | `system command <name>` | the path of a module's argc script |

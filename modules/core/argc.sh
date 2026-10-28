@@ -68,18 +68,20 @@ system::source() {
 
 # @cmd build `skogai` for a shell: one argc file with every module, man pages, completions
 #
-# writes into <local|global dir>/tmp/skogai/, throwaway and rebuilt at will:
-# bin/skogai (help and completion for core and every module found from here;
-# everything runs through the bin/skogai that built it), completions/skogai.sh
-# for ARGC_COMPLETIONS_PATH, completions/skogai.{bash,zsh,fish}, man/man1.
+# writes <local|global dir>/bin/skogai, the runner the skogai binary hands
+# off to (help and completion for core and every module found from here;
+# everything runs through the skogai that built it), and into tmp/skogai/,
+# throwaway and rebuilt at will: completions/skogai.sh for
+# ARGC_COMPLETIONS_PATH, completions/skogai.{bash,zsh,fish}, man/man1.
 # prints the env lines that put it on PATH, MANPATH and ARGC_COMPLETIONS_PATH.
 # @option --to[local|global]  where to build, default core.module.install
 # @option --shell[bash|zsh|fish]  env lines for this shell, default from $SHELL
 system::build() {
     : "${SKOGAI_BIN:?run me as skogai system build}"
-    local to out tmp name layer dir cmd shell
+    local to base out tmp name layer dir cmd shell
     to="${argc_to:-$(_setting core.module.install)}"
-    out="$(dirname "$(_install_dir "$to")")/tmp/skogai"
+    base="$(dirname "$(_install_dir "$to")")"
+    out="$base/tmp/skogai"
     tmp="$(mktemp -d)"
     trap 'rm -rf "$tmp"' RETURN
     mkdir -p "$tmp/bin" "$tmp/completions" "$tmp/man/man1"
@@ -98,20 +100,22 @@ system::build() {
     mkdir "$tmp/main" && argc --argc-mangen "$tmp/bin/skogai" "$tmp/main" >/dev/null && cp "$tmp/main/skogai.1" "$tmp/man/man1/"
     rm -rf "$tmp/main"
     for f in "$tmp/man/man1"/*' '*; do [[ -e $f ]] && mv "$f" "${f// /-}"; done
+    mkdir -p "$base/bin" "$(dirname "$out")"
+    mv "$tmp/bin/skogai" "$base/bin/skogai"
+    rmdir "$tmp/bin"
     rm -rf "$out"
-    mkdir -p "$(dirname "$out")"
     cp -r "$tmp" "$out"
     shell="${argc_shell:-$(basename "${SHELL:-bash}")}"
     # shellcheck disable=SC2016 # lines for the user's shell, expanded there
     case "$shell" in
     fish)
-        printf 'fish_add_path --prepend %q\n' "$out/bin"
+        printf 'fish_add_path --prepend %q\n' "$base/bin"
         printf 'set -gx MANPATH %q $MANPATH\n' "$out/man"
         printf 'set -gx ARGC_COMPLETIONS_PATH %q $ARGC_COMPLETIONS_PATH\n' "$out/completions"
         printf 'source %q\n' "$out/completions/skogai.fish"
         ;;
     *)
-        printf 'export PATH=%q:"$PATH"\n' "$out/bin"
+        printf 'export PATH=%q:"$PATH"\n' "$base/bin"
         printf 'export MANPATH=%q:"$MANPATH"\n' "$out/man"
         printf 'export ARGC_COMPLETIONS_PATH=%q:"$ARGC_COMPLETIONS_PATH"\n' "$out/completions"
         printf 'source %q\n' "$out/completions/skogai.$shell"
@@ -119,7 +123,7 @@ system::build() {
     esac
 }
 
-# @cmd check modules against the spec (docs/module.md), all found ones if none given
+# @cmd check modules against the spec, all found ones if none given
 #
 # one line per problem: name, error or warn, message. exit 1 on any error;
 # a missing tool is a warn, it is about this machine, not the module.
@@ -172,8 +176,10 @@ system::defaults() {
 
 # @cmd copy a module into .skogai/modules, or the global dir. prints the plan unless --apply
 #
-# copies module.md, its command and its `files:`. a file already there and
-# different is kept and reported; `skogai system diff` shows how.
+# copies module.md, its command and its `files:`, and writes bin/skogai-<name>
+# beside the install dir for a module with a command, so `skogai <name>` finds
+# it on PATH. a file already there and different is kept and reported;
+# `skogai system diff` shows how.
 # exit 1 when there is something to copy and --apply was not given.
 # @arg source![?`_choice_source`]  a module name from the sources, or a path to a module dir
 # @option --to[local|global]  where to install, default core.module.install
@@ -200,6 +206,18 @@ system::add() {
             cp -p "$src/$rel" "$dest/$rel"
         fi
     done < <(_module_files "$src")
+    if [[ $name != core && -n $(_field "$src/module.md" .command) ]]; then
+        rel="$(dirname "$(_install_dir "$to")")/bin/skogai-$name"
+        if [[ ! -e $rel ]]; then
+            status=add todo=1
+        elif cmp -s <(_shim "$name") "$rel"; then
+            status=same
+        else
+            status=keep
+        fi
+        printf '%-5s %s\n' "$status" "$rel"
+        [[ $status != add || ${argc_apply:-} != 1 ]] || _write_shim "$name" "$rel"
+    fi
     _missing "$src" >&2
     [[ $todo == 0 || ${argc_apply:-} == 1 ]] || exit 1
 }
@@ -216,7 +234,7 @@ system::diff() {
     return "$rc"
 }
 
-# @cmd scaffold a new module from core's templates/module
+# @cmd scaffold a new module from core's templates/module, and its bin/skogai-<name>
 # @arg name!  lowercase, one segment
 # @arg description  what it is, one line
 # @option --to[local|global]  where to create it, default core.module.install
@@ -237,6 +255,7 @@ system::new() {
         [[ ! -x $tpl/$f ]] || chmod +x "$dest/${f//_name_/$argc_name}"
         echo "wrote $dest/${f//_name_/$argc_name}" >&2
     done < <(cd "$tpl" && find . -type f -printf '%P\n' | sort)
+    [[ -z $(_field "$dest/module.md" .command) ]] || _write_shim "$argc_name" "$(dirname "$(_install_dir "$to")")/bin/skogai-$argc_name"
 }
 
 # "key<TAB>value" of every `config:` default, of the named modules or all;
@@ -368,6 +387,23 @@ _main() {
 _forward() {
     printf '\n# @cmd %s\n# @arg args~[?`_choice_forward`]\n' "$2"
     printf '%s() { exec "$BIN" %s "${argc_args[@]}"; }\n\n' "$1" "$1"
+}
+
+# bin/skogai-<name>: `skogai <name>` as its own command, run with its env.
+# no path in it: the module is whichever <name> skogai finds first
+# shellcheck disable=SC2016 # generated code, expanded when it runs
+_shim() {
+    printf '#!/usr/bin/env bash\n# skogai %s, made by skogai system add\nset -euo pipefail\n' "$1"
+    printf 'export SKOGAI_BIN="${SKOGAI_BIN:-$(command -v skogai)}"\n'
+    printf 'cmd="$("$SKOGAI_BIN" system command %s)"\n' "$1"
+    printf 'eval "$("$SKOGAI_BIN" system env %s)"\n' "$1"
+    printf 'exec argc --argc-run "$cmd" "$@"\n'
+}
+
+_write_shim() {
+    mkdir -p "$(dirname "$2")"
+    _shim "$1" >"$2"
+    chmod +x "$2"
 }
 
 # names a module can't have: `skogai <name>` would be core's

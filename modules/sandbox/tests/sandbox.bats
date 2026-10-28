@@ -12,7 +12,7 @@ load "$SKOGAI_TEST_HELPER"
     assert_status 0
     assert_output_has "export SKOGAI_CONFIG_DIR=$S/global"
     assert_output_has "export SKOGAI_LOCAL_DIR=$S/repo/.skogai"
-    assert_output_has "export PATH=$S/repo/.skogai/tmp/skogai/bin:"
+    assert_output_has "export PATH=$S/repo/.skogai/bin:"
     assert_output_has "cd $S/repo"
     assert_file "$S/repo/.skogai/modules/config/module.md"
     assert_file "$S/repo/.skogai/modules/lonely/module.md"

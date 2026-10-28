@@ -157,16 +157,16 @@ SH
     run skogai system build --shell bash
     assert_status 0
     B="$LOCAL/tmp/skogai"
-    assert_output_has "export PATH=$B/bin:"
-    assert_file "$B/bin/skogai"
+    assert_output_has "export PATH=$LOCAL/bin:"
+    assert_file "$LOCAL/bin/skogai"
     assert_file "$B/completions/skogai.sh"
     assert_file "$B/completions/skogai.fish"
     assert_file "$B/man/man1/skogai.1"
     assert_file "$B/man/man1/skogai-system-build.1"
-    run "$B/bin/skogai" --help
+    run "$LOCAL/bin/skogai" --help
     assert_output_has "  config "
     assert_output_has "  system "
-    run "$B/bin/skogai" config get core.module.install
+    run "$LOCAL/bin/skogai" config get core.module.install
     assert_output_has local
     run env ARGC_COMPLETIONS_PATH="$B/completions" argc --argc-compgen generic "" skogai config ""
     assert_output_has unset
@@ -177,7 +177,7 @@ SH
 @test "system build: a module added after the build still runs" {
     skogai system build >/dev/null 2>&1
     skogai system new late "came later" >/dev/null 2>&1
-    run "$LOCAL/tmp/skogai/bin/skogai" late hello you
+    run "$LOCAL/bin/skogai" late hello you
     assert_status 0
     assert_output_has "hello, you"
 }
@@ -185,8 +185,8 @@ SH
 @test "system build: --shell fish prints fish lines, --to global builds there" {
     run skogai system build --to global --shell fish
     assert_status 0
-    assert_output_has "fish_add_path --prepend $SKOGAI_CONFIG_DIR/tmp/skogai/bin"
-    assert_file "$SKOGAI_CONFIG_DIR/tmp/skogai/bin/skogai"
+    assert_output_has "fish_add_path --prepend $SKOGAI_CONFIG_DIR/bin"
+    assert_file "$SKOGAI_CONFIG_DIR/bin/skogai"
 }
 
 @test "system env: a list default is one key, one item per line" {
@@ -305,4 +305,66 @@ MD
     rm -rf "$FIX/lonely"
     run skogai system source lonely
     assert_status 1
+}
+
+@test "system add: a module with a command gets bin/skogai-<name>, core and a bare one don't" {
+    run skogai system add config
+    assert_output_has "add   $LOCAL/bin/skogai-config"
+    [[ ! -e $LOCAL/bin/skogai-config ]]
+    skogai system add config --apply >/dev/null 2>&1
+    run env -u SKOGAI_BIN "$LOCAL/bin/skogai-config" get core.module.install
+    assert_status 0
+    assert_output_has local
+    run skogai system add config
+    assert_output_has "same  $LOCAL/bin/skogai-config"
+    skogai system add core --apply >/dev/null 2>&1
+    [[ ! -e $LOCAL/bin/skogai-core ]]
+    fixture bare <<<$'---\ntype: module\nname: bare\ndescription: no command\nrequires: [core]\n---'
+    skogai system add bare --apply >/dev/null 2>&1
+    [[ ! -e $LOCAL/bin/skogai-bare ]]
+}
+
+@test "system new: writes bin/skogai-<name> beside the install dir" {
+    skogai system new greet "says hello" --to global >/dev/null 2>&1
+    run "$SKOGAI_CONFIG_DIR/bin/skogai-greet" hello you
+    assert_status 0
+    assert_output_has "hello, you"
+}
+
+@test "dispatch: skogai <name> is skogai-<name> on PATH first, any executable" {
+    mkdir -p "$LOCAL/bin"
+    printf '#!/usr/bin/env bash\necho "plain $*"\n' >"$LOCAL/bin/skogai-plain"
+    chmod +x "$LOCAL/bin/skogai-plain"
+    run skogai plain a b
+    assert_status 0
+    [[ $output == "plain a b" ]]
+    printf '#!/usr/bin/env bash\necho shadowed\n' >"$LOCAL/bin/skogai-config"
+    chmod +x "$LOCAL/bin/skogai-config"
+    run skogai config get core.module.install
+    [[ $output == shadowed ]]
+    printf '#!/usr/bin/env bash\necho never\n' >"$LOCAL/bin/skogai-system"
+    chmod +x "$LOCAL/bin/skogai-system"
+    run skogai system ls
+    refute_output_has never
+}
+
+@test "runner: the nearest .skogai/bin/skogai is handed off to, and is the local dir" {
+    unset SKOGAI_LOCAL_DIR
+    mkdir -p near/.skogai/bin near/sub
+    printf '#!/usr/bin/env bash\necho "near $SKOGAI_LOCAL_DIR $*"\n' >near/.skogai/bin/skogai
+    chmod +x near/.skogai/bin/skogai
+    run bash -c 'cd near/sub && "$SKOGAI_BIN" system ls'
+    assert_status 0
+    [[ $output == "near $REPO/near/.skogai system ls" ]]
+    run bash -c 'cd near/sub && SKOGAI_RUNNER=1 "$SKOGAI_BIN" system ls'
+    assert_output_has "core         source"
+}
+
+@test "runner: the built runner on PATH hands back without a loop" {
+    skogai system build >/dev/null 2>&1
+    run env PATH="$LOCAL/bin:$PATH" skogai system ls
+    assert_status 0
+    assert_output_has "core         source"
+    run env PATH="$LOCAL/bin:$PATH" "$LOCAL/bin/skogai" config get core.module.install
+    assert_output_has local
 }
