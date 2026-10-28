@@ -185,7 +185,7 @@ SH
 @test "system build: --shell fish prints fish lines, --to global builds there" {
     run skogai system build --to global --shell fish
     assert_status 0
-    assert_output_has "fish_add_path --prepend $SKOGAI_CONFIG_DIR/bin"
+    assert_output_has "fish_add_path --path --prepend $SKOGAI_CONFIG_DIR/bin"
     assert_file "$SKOGAI_CONFIG_DIR/bin/skogai"
 }
 

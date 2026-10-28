@@ -109,7 +109,7 @@ system::build() {
     # shellcheck disable=SC2016 # lines for the user's shell, expanded there
     case "$shell" in
     fish)
-        printf 'fish_add_path --prepend %q\n' "$base/bin"
+        printf 'fish_add_path --path --prepend %q\n' "$base/bin"
         printf 'set -gx MANPATH %q $MANPATH\n' "$out/man"
         printf 'set -gx ARGC_COMPLETIONS_PATH %q $ARGC_COMPLETIONS_PATH\n' "$out/completions"
         printf 'source %q\n' "$out/completions/skogai.fish"
