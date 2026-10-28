@@ -2,7 +2,7 @@
 # @describe {{description}}
 # @meta binname skogai {{name}}
 
-# shellcheck disable=SC2154 # argc_* are assigned by --argc-eval, SKOGAI_* by `skogai module env`
+# shellcheck disable=SC2154 # argc_* are assigned by --argc-eval, SKOGAI_* by `skogai system env`
 set -euo pipefail
 
 : "${SKOGAI_MODULE_DIR:?run me as \`skogai {{name}}\`}"

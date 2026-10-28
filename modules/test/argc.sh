@@ -9,7 +9,7 @@
 # @meta require-tools bats,yq
 # @meta binname skogai test
 
-# shellcheck disable=SC2154 # argc_* are assigned by --argc-eval, SKOGAI_* by `skogai module env`
+# shellcheck disable=SC2154 # argc_* are assigned by --argc-eval, SKOGAI_* by `skogai system env`
 set -euo pipefail
 
 : "${SKOGAI_MODULE_DIR:?run me as \`skogai test\`}"
@@ -85,12 +85,12 @@ _closure() {
 
 # a module's dir: its source, else where it is found
 _dir() {
-    "$SKOGAI_BIN" module source "$1" 2>/dev/null ||
-        "$SKOGAI_BIN" module show "$1" 2>/dev/null | awk -F"\t" "NR == 1 && \$2 != \"\" { print \$2; f = 1 } END { exit !f }"
+    "$SKOGAI_BIN" system source "$1" 2>/dev/null ||
+        "$SKOGAI_BIN" system show "$1" 2>/dev/null | awk -F"\t" "NR == 1 && \$2 != \"\" { print \$2; f = 1 } END { exit !f }"
 }
 
 _requires() { yq --front-matter=extract '.requires[]' "$1/module.md" 2>/dev/null || true; }
 
-_choice_module() { "$SKOGAI_BIN" module ls | cut -d' ' -f1; }
+_choice_module() { "$SKOGAI_BIN" system ls | cut -d' ' -f1; }
 
 eval "$(argc --argc-eval "$0" "$@")"

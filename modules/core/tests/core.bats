@@ -3,51 +3,51 @@
 
 load "$SKOGAI_TEST_HELPER"
 
-@test "module defaults: every config: default, mounted under its module's name" {
-    run skogai module defaults core
+@test "system defaults: every config: default, mounted under its module's name" {
+    run skogai system defaults core
     assert_status 0
     assert_output_has "core.module.install	local"
 }
 
-@test "module ls: a source module is listed as source" {
-    run skogai module ls
+@test "system ls: a source module is listed as source" {
+    run skogai system ls
     assert_status 0
     assert_output_has "core         source"
 }
 
-@test "module add: a changed installed file is kept, diff shows it" {
-    skogai module add core --apply >/dev/null 2>&1
+@test "system add: a changed installed file is kept, diff shows it" {
+    skogai system add core --apply >/dev/null 2>&1
     echo extra >>"$LOCAL/modules/core/module.md"
-    run skogai module add core --apply
+    run skogai system add core --apply
     assert_status 0
     assert_output_has "keep  module.md"
     [[ $(tail -1 "$LOCAL/modules/core/module.md") == extra ]]
-    run skogai module diff core
+    run skogai system diff core
     assert_status 1
     assert_output_has "+extra"
 }
 
-@test "module add: --to global installs into the global dir" {
-    run skogai module add core --to global --apply
+@test "system add: --to global installs into the global dir" {
+    run skogai system add core --to global --apply
     assert_status 0
     assert_file "$SKOGAI_CONFIG_DIR/modules/core/module.md"
 }
 
-@test "module add: core.module.install picks the default target" {
-    SKOGAI_CORE_MODULE_INSTALL=global skogai module add core --apply >/dev/null 2>&1
+@test "system add: core.module.install picks the default target" {
+    SKOGAI_CORE_MODULE_INSTALL=global skogai system add core --apply >/dev/null 2>&1
     assert_file "$SKOGAI_CONFIG_DIR/modules/core/module.md"
 }
 
-@test "module add: an unknown source is a usage error" {
-    run skogai module add nosuchmodule
+@test "system add: an unknown source is a usage error" {
+    run skogai system add nosuchmodule
     assert_status 2
 }
 
-@test "module new: scaffolds a module that passes its own tests" {
-    run skogai module new greet "says hello"
+@test "system new: scaffolds a module that passes its own tests" {
+    run skogai system new greet "says hello"
     assert_status 0
     assert_file "$LOCAL/modules/greet/tests/greet.bats"
-    run skogai module check greet
+    run skogai system check greet
     assert_status 0
     run skogai greet hello skogix
     assert_output_has "hello, skogix"
@@ -55,17 +55,17 @@ load "$SKOGAI_TEST_HELPER"
     assert_output_has "hej, skogix"
 }
 
-@test "module new: refuses reserved, bad and existing names" {
-    run skogai module new module x
+@test "system new: refuses reserved, bad and existing names" {
+    run skogai system new system x
     assert_status 2
-    run skogai module new Bad x
+    run skogai system new Bad x
     assert_status 2
-    skogai module new greet x 2>/dev/null
-    run skogai module new greet x
+    skogai system new greet x 2>/dev/null
+    run skogai system new greet x
     assert_status 2
 }
 
-@test "module check: reports every spec problem" {
+@test "system check: reports every spec problem" {
     fixture bad <<'MD'
 ---
 type: module
@@ -78,7 +78,7 @@ tools: [nosuchtool]
 foo: 1
 ---
 MD
-    run skogai module check "$FIX/bad"
+    run skogai system check "$FIX/bad"
     assert_status 1
     assert_output_has "name is not the directory name"
     assert_output_has "command nope.sh is missing"
@@ -90,8 +90,8 @@ MD
 }
 
 @test "module: a local module shadows its source" {
-    skogai module add core --apply >/dev/null 2>&1
-    run skogai module ls
+    skogai system add core --apply >/dev/null 2>&1
+    run skogai system ls
     assert_output_has "core         local"
 }
 
@@ -143,18 +143,18 @@ eval "$(argc --argc-eval "$0" "$@")"
 SH
     run skogai hooky show
     assert_output_has "install=unset"
-    skogai module add hooky --apply >/dev/null 2>&1
+    skogai system add hooky --apply >/dev/null 2>&1
     assert_file "$LOCAL/modules/hooky/env.sh"
     run skogai hooky show
     assert_output_has "install=global"
-    run skogai module env core
+    run skogai system env core
     assert_output_has "export SKOGAI_CORE_MODULE_INSTALL=global"
-    skogai module new late x >/dev/null 2>&1
+    skogai system new late x >/dev/null 2>&1
     assert_file "$SKOGAI_CONFIG_DIR/modules/late/module.md"
 }
 
-@test "module build: the built skogai lists, runs and completes every module" {
-    run skogai module build --shell bash
+@test "system build: the built skogai lists, runs and completes every module" {
+    run skogai system build --shell bash
     assert_status 0
     B="$LOCAL/tmp/skogai"
     assert_output_has "export PATH=$B/bin:"
@@ -162,10 +162,10 @@ SH
     assert_file "$B/completions/skogai.sh"
     assert_file "$B/completions/skogai.fish"
     assert_file "$B/man/man1/skogai.1"
-    assert_file "$B/man/man1/skogai-module-build.1"
+    assert_file "$B/man/man1/skogai-system-build.1"
     run "$B/bin/skogai" --help
     assert_output_has "  config "
-    assert_output_has "  module "
+    assert_output_has "  system "
     run "$B/bin/skogai" config get core.module.install
     assert_output_has local
     run env ARGC_COMPLETIONS_PATH="$B/completions" argc --argc-compgen generic "" skogai config ""
@@ -174,22 +174,22 @@ SH
     assert_output_has core.module.install
 }
 
-@test "module build: a module added after the build still runs" {
-    skogai module build >/dev/null 2>&1
-    skogai module new late "came later" >/dev/null 2>&1
+@test "system build: a module added after the build still runs" {
+    skogai system build >/dev/null 2>&1
+    skogai system new late "came later" >/dev/null 2>&1
     run "$LOCAL/tmp/skogai/bin/skogai" late hello you
     assert_status 0
     assert_output_has "hello, you"
 }
 
-@test "module build: --shell fish prints fish lines, --to global builds there" {
-    run skogai module build --to global --shell fish
+@test "system build: --shell fish prints fish lines, --to global builds there" {
+    run skogai system build --to global --shell fish
     assert_status 0
     assert_output_has "fish_add_path --prepend $SKOGAI_CONFIG_DIR/tmp/skogai/bin"
     assert_file "$SKOGAI_CONFIG_DIR/tmp/skogai/bin/skogai"
 }
 
-@test "module env: a list default is one key, one item per line" {
+@test "system env: a list default is one key, one item per line" {
     fixture tagged <<'MD'
 ---
 type: module
@@ -200,10 +200,10 @@ config:
   tags: [a, b]
 ---
 MD
-    run skogai module defaults tagged
+    run skogai system defaults tagged
     assert_status 0
     [[ $output == $'tagged.tags\ta\x1fb' ]]
-    run skogai module env tagged
+    run skogai system env tagged
     assert_output_has "export SKOGAI_TAGGED_TAGS=$'a\\nb'"
 }
 
@@ -211,63 +211,63 @@ MD
     # the default, not the sandbox's
     unset SKOGAI_LOCAL_DIR
     mkdir -p sub/deeper
-    run bash -c 'cd sub/deeper && "$SKOGAI_BIN" module env config'
+    run bash -c 'cd sub/deeper && "$SKOGAI_BIN" system env config'
     assert_output_has "export SKOGAI_LOCAL_DIR=$LOCAL"
     mkdir "$BATS_TEST_TMPDIR/nogit"
     cd "$BATS_TEST_TMPDIR/nogit"
-    run skogai module env config
+    run skogai system env config
     assert_output_has "export SKOGAI_LOCAL_DIR=$BATS_TEST_TMPDIR/nogit/.skogai"
 }
 
 @test "dispatch: an unknown command fails and names the known ones" {
     run skogai nosuch
     [[ $status -ne 0 ]]
-    assert_output_has "subcommands: module"
+    assert_output_has "subcommands: system"
 }
 
-@test "module show and command: where it is, its manifest, its argc script" {
-    run skogai module show config
+@test "system show and command: where it is, its manifest, its argc script" {
+    run skogai system show config
     assert_status 0
     [[ ${lines[0]} == source$'\t'*/config ]]
     assert_output_has "name: config"
-    run skogai module command config
+    run skogai system command config
     [[ $output == */config/argc.sh ]]
     fixture bare <<<$'---\ntype: module\nname: bare\ndescription: no command\nrequires: [core]\n---'
-    run skogai module command bare
+    run skogai system command bare
     assert_status 1
-    run skogai module show nosuch
+    run skogai system show nosuch
     assert_status 1
 }
 
-@test "module diff: an unchanged copy is exit 0, one without a source is exit 2" {
-    skogai module add core --apply >/dev/null 2>&1
-    run skogai module diff core
+@test "system diff: an unchanged copy is exit 0, one without a source is exit 2" {
+    skogai system add core --apply >/dev/null 2>&1
+    run skogai system diff core
     assert_status 0
     [[ -z $output ]]
     fixture gone <<<$'---\ntype: module\nname: gone\ndescription: x\nrequires: [core]\n---'
-    skogai module add "$FIX/gone" --apply >/dev/null 2>&1
+    skogai system add "$FIX/gone" --apply >/dev/null 2>&1
     rm -rf "$FIX/gone"
-    run skogai module diff gone
+    run skogai system diff gone
     assert_status 2
 }
 
-@test "module add: the installed copy itself is already installed, exit 0" {
-    skogai module add core --apply >/dev/null 2>&1
-    run skogai module add "$LOCAL/modules/core"
+@test "system add: the installed copy itself is already installed, exit 0" {
+    skogai system add core --apply >/dev/null 2>&1
+    run skogai system add "$LOCAL/modules/core"
     assert_status 0
     assert_output_has "already installed"
 }
 
-@test "module add: only module.md, the command and files: are copied" {
+@test "system add: only module.md, the command and files: are copied" {
     fixture shipped <<<$'---\ntype: module\nname: shipped\ndescription: x\nrequires: [core]\nfiles: [templates/]\n---'
     mkdir -p "$FIX/shipped/templates/sub" "$FIX/shipped/tests"
     touch "$FIX/shipped/templates/sub/t.md" "$FIX/shipped/tests/shipped.bats" "$FIX/shipped/notes.md"
-    skogai module add shipped --apply >/dev/null 2>&1
+    skogai system add shipped --apply >/dev/null 2>&1
     assert_file "$LOCAL/modules/shipped/templates/sub/t.md"
     [[ ! -e $LOCAL/modules/shipped/tests && ! -e $LOCAL/modules/shipped/notes.md ]]
 }
 
-@test "module check: the rest of the spec problems" {
+@test "system check: the rest of the spec problems" {
     fixture worse <<'MD'
 ---
 type: thing
@@ -284,7 +284,7 @@ MD
     printf '#!/usr/bin/env bash\n# @cmd\n# @option --x[`\nfoo() { :; }\n' >"$FIX/worse/argc.sh"
     fixture help <<<$'---\ntype: module\nname: help\ndescription: x\nrequires: [core]\n---'
     fixture plain <<<'# no frontmatter'
-    run skogai module check "$FIX/worse" "$FIX/help" "$FIX/plain"
+    run skogai system check "$FIX/worse" "$FIX/help" "$FIX/plain"
     assert_status 1
     assert_output_has "worse	error	type is not module"
     assert_output_has "worse	error	description is not one line"
@@ -296,13 +296,13 @@ MD
     assert_output_has "plain	error	module.md has no frontmatter map"
 }
 
-@test "module source: where a module is installed from, exit 1 without one" {
-    run skogai module source core
+@test "system source: where a module is installed from, exit 1 without one" {
+    run skogai system source core
     assert_status 0
     [[ $output == "$(dirname "$SKOGAI_BIN")/../modules/core" || $output == "$(realpath "$(dirname "$SKOGAI_BIN")/../modules/core")" ]]
     fixture lonely <<<$'---\ntype: module\nname: lonely\ndescription: x\nrequires: [core]\n---'
-    skogai module add "$FIX/lonely" --apply >/dev/null 2>&1
+    skogai system add "$FIX/lonely" --apply >/dev/null 2>&1
     rm -rf "$FIX/lonely"
-    run skogai module source lonely
+    run skogai system source lonely
     assert_status 1
 }

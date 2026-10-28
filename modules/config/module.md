@@ -13,7 +13,7 @@ config: {}
 # config
 
 opt-in config layers for skogai, kept by mise. found only, `skogai config`
-reads and writes them; installed (`skogai module add config --apply`), every
+reads and writes them; installed (`skogai system add config --apply`), every
 skogai command runs with them, through `env.sh`.
 
 a key is a module's name and its own: `runner.model` is

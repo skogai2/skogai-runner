@@ -15,24 +15,24 @@ config:
 
 # core
 
-the module every other one stands on. `skogai module` is its command;
+the module every other one stands on. `skogai system` is its command;
 `skogai core ...` is the same thing spelled out. what a module
 is, how it is found, installed, configured and run: `docs/module.md` in
 skogai-runner.
 
 | command | |
 |---|---|
-| `module ls` | every module found, its layer and description |
-| `module show <name>` | its manifest, where it is, what it is missing |
-| `module check [name\|path]...` | check modules against the spec |
-| `module add <name\|path> [--to] [--apply]` | copy a module into `.skogai/modules` or the global dir |
-| `module diff <name>` | an installed copy against its source |
-| `module new <name> <description> [--to]` | scaffold from `templates/module/` |
-| `module build [--to] [--shell]` | generate `skogai` for a shell: one argc file over every module, man pages, completions |
-| `module env <name>` | the env a module's command runs with |
-| `module defaults [name]...` | every `config:` default, mounted under its module's name |
-| `module command <name>` | the path of a module's argc script |
-| `module source <name>` | the path of a module's source, what it is installed from |
+| `system ls` | every module found, its layer and description |
+| `system show <name>` | its manifest, where it is, what it is missing |
+| `system check [name\|path]...` | check modules against the spec |
+| `system add <name\|path> [--to] [--apply]` | copy a module into `.skogai/modules` or the global dir |
+| `system diff <name>` | an installed copy against its source |
+| `system new <name> <description> [--to]` | scaffold from `templates/module/` |
+| `system build [--to] [--shell]` | generate `skogai` for a shell: one argc file over every module, man pages, completions |
+| `system env <name>` | the env a module's command runs with |
+| `system defaults [name]...` | every `config:` default, mounted under its module's name |
+| `system command <name>` | the path of a module's argc script |
+| `system source <name>` | the path of a module's source, what it is installed from |
 
 ## config
 
@@ -44,12 +44,12 @@ without one installed, a key is its default or the env.
 
 | key | default | |
 |---|---|---|
-| `core.module.install` | `local` | where `module add` and `module new` put a module without `--to`: `local` or `global` |
+| `core.module.install` | `local` | where `system add` and `system new` put a module without `--to`: `local` or `global` |
 
-`templates/main.sh` is what `module build` fills in. `docs/argc/` is the argc
+`templates/main.sh` is what `system build` fills in. `docs/argc/` is the argc
 reference every module's command is written against.
 
-`templates/module/` is what `module new` scaffolds (`_name_` in a path becomes
+`templates/module/` is what `system new` scaffolds (`_name_` in a path becomes
 the module's name); edit an installed copy to change it for one repo.
 
 ## tests

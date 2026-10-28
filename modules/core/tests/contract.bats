@@ -4,8 +4,8 @@
 
 load "$SKOGAI_TEST_HELPER"
 
-@test "contract: module check has no errors" {
-    run skogai module check "$SKOGAI_TEST_MODULE"
+@test "contract: system check has no errors" {
+    run skogai system check "$SKOGAI_TEST_MODULE"
     assert_status 0
 }
 
@@ -29,7 +29,7 @@ load "$SKOGAI_TEST_HELPER"
     local keys key
     # leaves, a list being one leaf; the assignment fails the test if yq does
     keys="$(yq --front-matter=extract '.config // {} | .. | select(tag == "!!seq" or (tag != "!!map" and (parent | tag) != "!!seq")) | path | .[1:] | join(".")' "$(module_dir)/module.md")"
-    run skogai module defaults "$SKOGAI_TEST_MODULE"
+    run skogai system defaults "$SKOGAI_TEST_MODULE"
     assert_status 0
     while IFS= read -r key; do
         [[ -n $key ]] || continue
@@ -37,8 +37,8 @@ load "$SKOGAI_TEST_HELPER"
     done <<<"$keys"
 }
 
-@test "contract: module env names it and its dir" {
-    run skogai module env "$SKOGAI_TEST_MODULE"
+@test "contract: system env names it and its dir" {
+    run skogai system env "$SKOGAI_TEST_MODULE"
     assert_status 0
     assert_output_has "export SKOGAI_MODULE=$SKOGAI_TEST_MODULE"
     assert_output_has "export SKOGAI_MODULE_DIR=$(module_dir)"
@@ -46,23 +46,23 @@ load "$SKOGAI_TEST_HELPER"
 }
 
 @test "contract: add is a plan, --apply installs, a second add is all same" {
-    run skogai module add "$SKOGAI_TEST_MODULE"
+    run skogai system add "$SKOGAI_TEST_MODULE"
     assert_status 1
     [[ ! -e $LOCAL/modules/$SKOGAI_TEST_MODULE ]]
-    run skogai module add "$SKOGAI_TEST_MODULE" --apply
+    run skogai system add "$SKOGAI_TEST_MODULE" --apply
     assert_status 0
     assert_file "$LOCAL/modules/$SKOGAI_TEST_MODULE/module.md"
-    run skogai module add "$SKOGAI_TEST_MODULE"
+    run skogai system add "$SKOGAI_TEST_MODULE"
     assert_status 0
     refute_output_has "add "
     refute_output_has "keep "
 }
 
 @test "contract: the installed copy passes check and runs" {
-    skogai module add "$SKOGAI_TEST_MODULE" --apply 2>/dev/null >/dev/null
-    run skogai module show "$SKOGAI_TEST_MODULE"
+    skogai system add "$SKOGAI_TEST_MODULE" --apply 2>/dev/null >/dev/null
+    run skogai system show "$SKOGAI_TEST_MODULE"
     assert_output_has "local	$LOCAL/modules/$SKOGAI_TEST_MODULE"
-    run skogai module check "$SKOGAI_TEST_MODULE"
+    run skogai system check "$SKOGAI_TEST_MODULE"
     assert_status 0
     [[ -n $(yq --front-matter=extract '.command // ""' "$LOCAL/modules/$SKOGAI_TEST_MODULE/module.md") ]] || return 0
     run skogai "$SKOGAI_TEST_MODULE" --help

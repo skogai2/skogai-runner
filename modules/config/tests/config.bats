@@ -131,12 +131,12 @@ SH
     skogai config set envy.some-key layered
     run skogai envy show
     assert_output_has "key=default"
-    skogai module add config --apply >/dev/null 2>&1
+    skogai system add config --apply >/dev/null 2>&1
     run skogai envy show
     assert_output_has "key=layered"
     SKOGAI_ENVY_SOMEKEY=caller run skogai envy show
     assert_output_has "key=caller"
     skogai config set core.module.install global
-    skogai module new late x >/dev/null 2>&1
+    skogai system new late x >/dev/null 2>&1
     assert_file "$SKOGAI_CONFIG_DIR/modules/late/module.md"
 }

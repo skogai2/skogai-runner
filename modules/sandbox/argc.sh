@@ -7,14 +7,14 @@
 # mise's own config is not swapped out: the config module's layers are mise's.
 # @meta binname skogai sandbox
 
-# shellcheck disable=SC2154 # argc_* are assigned by --argc-eval, SKOGAI_* by `skogai module env`
+# shellcheck disable=SC2154 # argc_* are assigned by --argc-eval, SKOGAI_* by `skogai system env`
 set -euo pipefail
 
 : "${SKOGAI_MODULE_DIR:?run me as \`skogai sandbox\`}"
 
 # @cmd make a sandbox: every module found from here installed into it, skogai built there
 #
-# installs every module into repo/.skogai/modules (as `module add --apply`
+# installs every module into repo/.skogai/modules (as `system add --apply`
 # would, from its source when it has one, else from where it was found) and
 # builds skogai there. prints the env lines that switch a shell into it: no
 # SKOGAI_* config from outside, the two install dirs, the built skogai first
@@ -44,11 +44,11 @@ new() {
     }
     if [[ ${argc_empty:-} != 1 ]]; then
         while read -r name _; do
-            src="$("$SKOGAI_BIN" module source "$name")" ||
-                src="$("$SKOGAI_BIN" module show "$name" | awk -F"\t" "NR == 1 { print \$2 }")"
-            sandboxed module add "$src" --to local --apply >/dev/null
-        done < <("$SKOGAI_BIN" module ls)
-        lines="$(sandboxed module build --to local --shell "$shell")"
+            src="$("$SKOGAI_BIN" system source "$name")" ||
+                src="$("$SKOGAI_BIN" system show "$name" | awk -F"\t" "NR == 1 { print \$2 }")"
+            sandboxed system add "$src" --to local --apply >/dev/null
+        done < <("$SKOGAI_BIN" system ls)
+        lines="$(sandboxed system build --to local --shell "$shell")"
     fi
     _run "$dir" >"$dir/run"
     chmod +x "$dir/run"

@@ -9,7 +9,7 @@
 # @meta binname skogai config
 # @env MISE_OVERRIDE_CONFIG_FILENAMES  mise's project config files; skogai's are put first when missing
 
-# shellcheck disable=SC2154 # argc_* are assigned by --argc-eval, SKOGAI_* by `skogai module env`
+# shellcheck disable=SC2154 # argc_* are assigned by --argc-eval, SKOGAI_* by `skogai system env`
 set -euo pipefail
 
 : "${SKOGAI_MODULE_DIR:?run me as \`skogai config\`}"
@@ -20,7 +20,7 @@ MISE_FILES='.config/mise/conf.d/*.toml:.config/mise/config.toml:.config/mise.tom
 _skogai_files() {
     local name files=skogai.toml
     # already set, the env: hook of this module ls doesn't come back here
-    while read -r name _; do files+=":skogai.$name.toml"; done < <(MISE_OVERRIDE_CONFIG_FILENAMES=skogai.toml "$SKOGAI_BIN" module ls)
+    while read -r name _; do files+=":skogai.$name.toml"; done < <(MISE_OVERRIDE_CONFIG_FILENAMES=skogai.toml "$SKOGAI_BIN" system ls)
     echo "$files"
 }
 if [[ ${MISE_OVERRIDE_CONFIG_FILENAMES:-} != *skogai.toml* ]]; then
@@ -102,7 +102,7 @@ files() {
     _present local "$(_root)/skogai.toml"
     while read -r name _; do
         _present "module:$name" "$(_root)/skogai.$name.toml"
-    done < <("$SKOGAI_BIN" module ls)
+    done < <("$SKOGAI_BIN" system ls)
 }
 
 # "VAR<TAB>value<TAB>file" for every SKOGAI_* the mise layers set here
@@ -120,7 +120,7 @@ _resolve() {
     while IFS=$'\t' read -r k v; do
         e="$(_env_name "$k")"
         key[$e]="$k" val[$e]="$v" origin[$e]="module:${k%%.*}"
-    done < <("$SKOGAI_BIN" module defaults)
+    done < <("$SKOGAI_BIN" system defaults)
     while IFS=$'\t' read -r e v src; do
         key[$e]="${key[$e]:-$(_key "$e")}" val[$e]="$v" origin[$e]="$src"
     done < <(_mise)
@@ -172,6 +172,6 @@ _choice_key() {
     if [[ ${ARGC_COMPGEN:-0} == 1 ]]; then cut -f1,2 <<<"$keys" | tr "$SEP" ' '; else cut -f1 <<<"$keys"; fi
 }
 
-_choice_module() { "$SKOGAI_BIN" module ls | cut -d' ' -f1; }
+_choice_module() { "$SKOGAI_BIN" system ls | cut -d' ' -f1; }
 
 eval "$(argc --argc-eval "$0" "$@")"

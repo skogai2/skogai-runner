@@ -20,14 +20,14 @@ SELF="$(realpath "${BASH_SOURCE[0]}")"
 GLOBAL_DIR="${SKOGAI_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/skogai}"
 MODULE_PATH="${SKOGAI_MODULE_PATH:-$(dirname "$(dirname "$SELF")")}"
 
-# joins the items of a list value in `module defaults`
+# joins the items of a list value in `system defaults`
 SEP=$'\x1f'
 
 # @cmd find, show, install and scaffold modules
-module() { :; }
+system() { :; }
 
 # @cmd every module by name: where it was found and what it is
-module::ls() {
+system::ls() {
     local name layer dir
     while IFS=$'\t' read -r name layer dir; do
         printf '%-12s %-7s %s\n' "$name" "$layer" "$(_field "$dir/module.md" .description)"
@@ -36,7 +36,7 @@ module::ls() {
 
 # @cmd a module's manifest, where it lives, and what it is missing
 # @arg name![`_choice_module`]
-module::show() {
+system::show() {
     local dir layer
     IFS=$'\t' read -r _ layer dir < <(_module "$argc_name") || { echo "no module: $argc_name" >&2; exit 1; }
     printf '%s\t%s\n' "$layer" "$dir"
@@ -46,14 +46,14 @@ module::show() {
 
 # @cmd path of a module's argc script; exits 1 if it has none
 # @arg name![`_choice_module`]
-module::command() {
+system::command() {
     local dir
     IFS=$'\t' read -r _ _ dir < <(_module "$argc_name") || exit 1
-    module::command_of "$dir"
+    system::command_of "$dir"
 }
 
 # a module dir's argc script, or 1 if it has none
-module::command_of() {
+system::command_of() {
     local cmd
     cmd="$(_field "$1/module.md" .command)"
     [[ -n $cmd && -f $1/$cmd ]] || return 1
@@ -62,7 +62,7 @@ module::command_of() {
 
 # @cmd path of a module's source dir, where it is installed from; exits 1 if it has none
 # @arg name![`_choice_module`]
-module::source() {
+system::source() {
     _source "$argc_name"
 }
 
@@ -75,8 +75,8 @@ module::source() {
 # prints the env lines that put it on PATH, MANPATH and ARGC_COMPLETIONS_PATH.
 # @option --to[local|global]  where to build, default core.module.install
 # @option --shell[bash|zsh|fish]  env lines for this shell, default from $SHELL
-module::build() {
-    : "${SKOGAI_BIN:?run me as skogai module build}"
+system::build() {
+    : "${SKOGAI_BIN:?run me as skogai system build}"
     local to out tmp name layer dir cmd shell
     to="${argc_to:-$(_setting core.module.install)}"
     out="$(dirname "$(_install_dir "$to")")/tmp/skogai"
@@ -92,7 +92,7 @@ module::build() {
     argc --argc-mangen "$SELF" "$tmp/man/man1" >/dev/null
     while IFS=$'\t' read -r name layer dir; do
         [[ $name != core ]] || continue
-        cmd="$(module::command_of "$dir")" || continue
+        cmd="$(system::command_of "$dir")" || continue
         argc --argc-mangen "$cmd" "$tmp/man/man1" >/dev/null
     done < <(_modules)
     mkdir "$tmp/main" && argc --argc-mangen "$tmp/bin/skogai" "$tmp/main" >/dev/null && cp "$tmp/main/skogai.1" "$tmp/man/man1/"
@@ -124,7 +124,7 @@ module::build() {
 # one line per problem: name, error or warn, message. exit 1 on any error;
 # a missing tool is a warn, it is about this machine, not the module.
 # @arg module*[?`_choice_module`]  names, or paths to module dirs
-module::check() {
+system::check() {
     local m dir rc=0 targets=("${argc_module[@]}")
     [[ ${#targets[@]} -gt 0 ]] || mapfile -t targets < <(_modules | cut -f3)
     for m in "${targets[@]}"; do
@@ -145,7 +145,7 @@ module::check() {
 # then the module's own keys, its default unless the env or an `env:` set it:
 # runner.model is SKOGAI_RUNNER_MODEL. a list's items are newline-separated.
 # @arg name![`_choice_module`]
-module::env() {
+system::env() {
     local dir key value env hooks
     IFS=$'\t' read -r _ _ dir < <(_module "$argc_name") || exit 1
     hooks="$(_env_hooks)"
@@ -166,19 +166,19 @@ module::env() {
 # a module's keys are mounted under its name: runner's `model` is
 # runner.model. a list is one key, its items joined by \x1f.
 # @arg module*[`_choice_module`]  default every module found
-module::defaults() {
+system::defaults() {
     _defaults "${argc_module[@]}"
 }
 
 # @cmd copy a module into .skogai/modules, or the global dir. prints the plan unless --apply
 #
 # copies module.md, its command and its `files:`. a file already there and
-# different is kept and reported; `skogai module diff` shows how.
+# different is kept and reported; `skogai system diff` shows how.
 # exit 1 when there is something to copy and --apply was not given.
 # @arg source![?`_choice_source`]  a module name from the sources, or a path to a module dir
 # @option --to[local|global]  where to install, default core.module.install
 # @flag --apply  copy the files
-module::add() {
+system::add() {
     local src name to dest rel status todo=0
     src="$(_source "$argc_source")" || { echo "no module source: $argc_source" >&2; exit 2; }
     name="$(basename "$src")"
@@ -206,7 +206,7 @@ module::add() {
 
 # @cmd diff an installed module against its source
 # @arg name![`_choice_installed`]
-module::diff() {
+system::diff() {
     local dir src rel rc=0
     IFS=$'\t' read -r _ _ dir < <(_module "$argc_name") || exit 1
     src="$(_source "$argc_name")" || { echo "no source for $argc_name" >&2; exit 2; }
@@ -220,7 +220,7 @@ module::diff() {
 # @arg name!  lowercase, one segment
 # @arg description  what it is, one line
 # @option --to[local|global]  where to create it, default core.module.install
-module::new() {
+system::new() {
     [[ $argc_name =~ ^[a-z][a-z0-9]*$ ]] || { echo "bad name: $argc_name" >&2; exit 2; }
     ! _reserved "$argc_name" || { echo "reserved: $argc_name" >&2; exit 2; }
     local to dest core tpl f
@@ -343,18 +343,18 @@ _module_files() {
     } | grep . | sort -u
 }
 
-# the main argc file for `module build`: templates/main.sh with one forwarding
+# the main argc file for `system build`: templates/main.sh with one forwarding
 # recipe per core group and per module with a command between its markers
 _main() {
-    local tpl name layer dir cmd desc known=module\|help
+    local tpl name layer dir cmd desc known=system\|help
     tpl="$(dirname "$SELF")/templates/main.sh"
     sed '/^# >>> generated$/q' "$tpl"
     printf 'BIN=%q\nCORE=%q\ndeclare -A CMDS=()\n' "$SKOGAI_BIN" "$SELF"
-    desc="$(argc --argc-export "$SELF" | yq -p json '.subcommands[] | select(.name == "module") | .describe | split("\n") | .[0]')"
-    _forward module "$desc"
+    desc="$(argc --argc-export "$SELF" | yq -p json '.subcommands[] | select(.name == "system") | .describe | split("\n") | .[0]')"
+    _forward system "$desc"
     while IFS=$'\t' read -r name layer dir; do
         [[ $name != core ]] || continue
-        cmd="$(module::command_of "$dir")" || continue
+        cmd="$(system::command_of "$dir")" || continue
         printf 'CMDS[%s]=%q\n' "$name" "$cmd"
         _forward "$name" "$(_field "$dir/module.md" .description)"
         known+="|$name"
@@ -371,7 +371,7 @@ _forward() {
 }
 
 # names a module can't have: `skogai <name>` would be core's
-_reserved() { [[ $1 =~ ^(core|module|help)$ ]]; }
+_reserved() { [[ $1 =~ ^(core|system|help)$ ]]; }
 
 # spec problems of one module dir as "name<TAB>error|warn<TAB>message"; 1 on any error
 _check() {
@@ -424,7 +424,7 @@ _missing() {
         [[ -z $t ]] || command -v "$t" >/dev/null || echo "missing tool: $t"
     done < <(_field "$1/module.md" '.tools[]')
     while IFS= read -r r; do
-        [[ -z $r ]] || _module "$r" >/dev/null || echo "missing module: $r (skogai module add $r)"
+        [[ -z $r ]] || _module "$r" >/dev/null || echo "missing module: $r (skogai system add $r)"
     done < <(_field "$1/module.md" '.requires[]')
 }
 
