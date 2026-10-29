@@ -1,0 +1,9 @@
+# Claude Progress Log
+# Project: skogai-runner
+# Created: 2026-10-29
+
+## Session 1 - Initialization
+- Created harness scaffolding via stamp.sh (stack=bash, no PostToolUse build hook available)
+- Detected stack: bash + argc + bats (mise)
+- Git identity: Emil Skogsund <emil@skogsund.se>, HTTPS remote (no SSH key)
+- init.sh: smoke=bash -n (+shellcheck errors), focused=bats <file>, full=bats tests

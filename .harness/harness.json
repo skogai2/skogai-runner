@@ -1,0 +1,22 @@
+{
+  "project": "skogai-runner",
+  "stack": "bash",
+  "created": "2026-10-29T15:50:22Z",
+  "harness": "vv-harness",
+  "git_identity": {
+    "user_name": "Emil Skogsund",
+    "user_email": "emil@skogsund.se",
+    "ssh_key": null,
+    "ssh_host": "https (github.com/skogai2)"
+  },
+  "plugin_version": "6.2.1",
+  "worker": {
+    "cli_version": "2.1.312",
+    "models": {
+      "lead": "opus",
+      "implementer": "sonnet",
+      "reviewer": "opus"
+    },
+    "recorded_at": "2026-10-29T16:00:00Z"
+  }
+}
