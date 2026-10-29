@@ -3,3 +3,14 @@ argc = "latest"
 jq = "latest"
 yq = "latest"
 bats = "latest"
+
+[tasks.test]
+description = "bats tests on this machine"
+run = "bats tests"
+
+[tasks."test:container"]
+description = "bats tests in a clean arch container"
+run = [
+  "podman build -q -t skogai-runner-dev -f Containerfile .",
+  "podman run --rm -v {{config_root}}:/repo:ro skogai-runner-dev bats /repo/tests",
+]
