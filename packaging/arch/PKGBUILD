@@ -1,0 +1,32 @@
+# skogai core into /usr/share/skogai. builds the repo's committed HEAD, not
+# the working tree; makepkg's own src/ and pkg/ stay in this directory
+pkgname=skogai-runner-git
+pkgver=0
+pkgrel=1
+pkgdesc='skogai main runner: one argc for every registered command file'
+arch=(any)
+url='https://github.com/skogai2/skogai-runner'
+license=(unknown)
+depends=(argc bash jq)
+makedepends=(git)
+checkdepends=(bats)
+provides=(skogai-runner)
+conflicts=(skogai-runner)
+install=skogai-runner.install
+source=("skogai-runner::git+file://${startdir%/packaging/arch}")
+sha256sums=(SKIP)
+
+pkgver() {
+    cd skogai-runner
+    printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+check() {
+    cd skogai-runner
+    bats tests
+}
+
+package() {
+    cd skogai-runner
+    install -Dm644 src/core/main.sh "$pkgdir/usr/share/skogai/core/main.sh"
+}

@@ -1,0 +1,9 @@
+post_install() {
+    printf '%s\n' \
+        '==> to make it your main argc file, as your user:' \
+        '    argc --argc-run /usr/share/skogai/core/main.sh sync'
+}
+
+post_upgrade() {
+    printf '%s\n' '==> run `argc sync` to rebuild ~/Argcfile.sh from the new template'
+}
