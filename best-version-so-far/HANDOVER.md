@@ -1,5 +1,7 @@
 # skogai-runner: handover
 
+This module work remains active. The [current plan](../docs/plan.md) establishes the basics before building it out. The decisions and verification below record the earlier implementation; they are context to revalidate, not current test results.
+
 started from a skogai session, 2026-10-18 (skogai branch `bridge-cse_013WWYqpWeqHxJuZ6CaqYtLf`); rebuilt around modules 2026-10-22/23.
 
 ## intent

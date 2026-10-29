@@ -2,7 +2,7 @@
 
 A Bash command runner built on [argc](https://github.com/sigoden/argc). Register an argc script once, then run it as `argc <name> ...`, with its own help, argument parsing, and completion.
 
-The current implementation is [src/core/main.sh](src/core/main.sh). It generates a main `Argcfile.sh` from a directory of registered scripts. The earlier modular runner in [best-version-so-far/](best-version-so-far/HANDOVER.md) is reference material for the broader skogai design; it is not what the current Arch package installs.
+The current implementation is [src/core/main.sh](src/core/main.sh). It generates a main `Argcfile.sh` from a directory of registered scripts. The module work in [best-version-so-far/](best-version-so-far/HANDOVER.md) remains active. We are establishing the basic contracts first, then building out that design. The current Arch package installs the registry runner template.
 
 ## Try it from the checkout
 
@@ -42,6 +42,8 @@ argc searches for an Argcfile in the current directory and its parents. A nearer
 - [Documentation index](docs/README.md)
 - [Current runner: registry, generation, and delegation](docs/runner.md)
 - [argc and argc-completions: reference map](docs/argc-guide.md)
-- [Design direction and unresolved questions](docs/design.md)
+- [Vision and foundational guarantees](docs/design.md)
+- [Foundation-first plan](docs/plan.md)
+- [Agent working instructions](AGENTS.md)
 
 Run `mise run test` for the current runner's Bats suite. `mise run test:container` builds an Arch container and runs the same suite through Podman. The older module tests under `best-version-so-far/` belong to that implementation and are not included in `bats tests`.

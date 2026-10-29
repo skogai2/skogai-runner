@@ -1,3 +1,7 @@
+# Active module backlog
+
+These plans remain active. [The foundation-first plan](../docs/plan.md) establishes the contracts before expanding this implementation. Revalidate older assumptions and deployment-specific tasks against the current environment.
+
 - [ ] runner;`evals/`: cases that check an agent reaches for `skogai runner send`/`wo` instead of doing the work inline, run with `skogai marketplace evals skogai-runner`
 - [ ] runner;workers with `--tools` run in the caller's tree. `wo run --sandbox` gives them their own cwd and skogai config, not a copy of the tree: give tool-using workers that edit this repo a `wt` worktree (`wo run --worktree`), see projects/orchestration delegate
 - [ ] runner;`wo` results are untyped files beside the workorder. decide if workorder becomes a dash type (dash TODO: task -> workorder)

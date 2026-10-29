@@ -6,9 +6,11 @@ Start with the [project README](../README.md) for setup, then [runner.md](runner
 | --- | --- |
 | [Runner](runner.md) | Registry, generated commands, paths, completion, and failure behavior |
 | [argc guide](argc-guide.md) | Upstream roles, reference links, source revisions, and local compatibility |
-| [Design direction](design.md) | Project intent, earlier module design, and questions still to resolve |
-| [Earlier module specification](../best-version-so-far/docs/module.md) | Reference design for modules, configuration, manifests, and contracts |
-| [Earlier handover](../best-version-so-far/HANDOVER.md) | Historical decisions and validation claims from the module implementation |
+| [Design direction](design.md) | Active vision, foundational guarantees, and workorder lifecycle |
+| [Plan](plan.md) | Concrete sequence from contracts to reusable bundles |
+| [Agent instructions](../AGENTS.md) | Principles and working rules for this repository |
+| [Active module specification](../best-version-so-far/docs/module.md) | Existing design for modules, configuration, manifests, and contracts |
+| [Earlier handover](../best-version-so-far/HANDOVER.md) | Module decisions and earlier validation claims to recheck before reuse |
 
 ## Local upstream references
 

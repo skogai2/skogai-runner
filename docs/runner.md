@@ -36,7 +36,7 @@ Shell integration is a separate step. See the [upstream completion guide](https:
 
 ## Boundaries
 
-The current runner does not discover module manifests, resolve layered skogai configuration, or build a native executable. Those concepts appear in earlier work and future intentions. `argc --argc-build` produces a standalone Bash script; it does not turn delegated scripts or their external tools into a self-contained binary.
+The current runner does not discover module manifests, resolve layered skogai configuration, or build a native executable. Those concepts remain active plans, with reusable implementation work under `best-version-so-far/`. The foundation comes first; see [the plan](plan.md). `argc --argc-build` produces a standalone Bash script; it does not turn delegated scripts or their external tools into a self-contained binary.
 
 `skogai-bridge-caller.sh` preserves the earlier bridge demo. Its `call` command expects a separately running HTTP tool bridge, and its demonstration scripts are not a full MCP service. The [demo agent README](../agents/demo/README.md) describes an earlier integration whose referenced bridge configuration and generated files are absent from this checkout.
 
