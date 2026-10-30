@@ -30,3 +30,10 @@ This file is referenced in CLAUDE.md and loaded every session.
 <!-- Coordination insights that apply across features — NOT domain-specific.
      Populated by the retrospective step at session end. -->
 - (none yet — first retrospective will populate this)
+
+## Meta-Session 2026-10-29
+- Scope accuracy: no features yet; session covered scaffolding and the foundation-first plan (docs/plan.md, AGENTS.md).
+- Model calibration: n/a, no agents spawned.
+- Discovery lineage: n/a.
+- Approach patterns: harness ceremony (improve loop, spec gate) was explained at length before any feature existed; skogix asked for the simple path. Prefer acting on bookkeeping over describing it.
+- Plan approval: n/a.
