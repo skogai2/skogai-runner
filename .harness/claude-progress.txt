@@ -7,3 +7,14 @@
 - Detected stack: bash + argc + bats (mise)
 - Git identity: Emil Skogsund <emil@skogsund.se>, HTTPS remote (no SSH key)
 - init.sh: smoke=bash -n (+shellcheck errors), focused=bats <file>, full=bats tests
+
+## Session 2 - Spec gate answers (2026-10-30)
+- Spec gate ASK on old F001-F004 (25 questions). docs/plan.md (foundation-first) superseded them:
+  - old F004 (single binary/packaging): deferred; plan says decide final form after contracts proven. Q16-20,22-24 moot.
+  - old F002 (.skogai override): already specified in best-version-so-far/docs/module.md (modules: first found wins local>global>source; config: layered, later wins, per key). Deferred to plan step 5. Q9/Q10 (orphan/broken override) still open.
+  - old F001 + F003 folded into new F001: relationship contract checker by example (plan step 1).
+  - Q21: tools are mise `latest`, unpinned; no minimum versions decided.
+  - Q25: tests/main.bats = current runner's interface contract until a decision replaces the registry runner.
+- New F001 sent to spec gate; plan steps 2-4 (workorder, JSONL evidence, bundle) wait on F001.
+- Open for skogix: capability enforcement mechanism for step 2 (how the environment rejects out-of-scope writes); settings ownership split mise vs git config.
+- Spec gate PASS on F001 after 4 passes; written to features.json with spec stamp. Next: /harness-continue on F001.

@@ -19,6 +19,9 @@ This file is referenced in CLAUDE.md and loaded every session.
 - bash + argc chosen: argc gives one declarative CLI surface (help, completion, parsing) usable by humans and agents alike (2026-10-29)
 - `best-version-so-far/` contains active module plans and reusable implementation. Foundation work comes first; tasks may reuse it deliberately. `agents/` and `docs/argc*` also contain reference material. Earlier validation claims need rechecking (clarified 2026-10-29)
 
+- F001 is the relationship contract checker only (spec-gated 2026-10-30). Invalid input is a verdict (JSONL on stdout, exit 0); exit 2 bad args, exit 1 missing yq/jq. Old proposals (split main.sh, .skogai override, single binary) deferred per docs/plan.md (2026-10-30)
+- Open plan-step-1 items, not yet features: operation identity / retry / linked intent revisions; configuration ownership and precedence (mise vs git config vs env vs module defaults). Step 2 also needs a decision on how the environment enforces writable scope.
+
 ### Patterns
 - Tests isolate HOME under `$BATS_TEST_TMPDIR` and drive the template via `argc --argc-run`.
 
@@ -36,4 +39,11 @@ This file is referenced in CLAUDE.md and loaded every session.
 - Model calibration: n/a, no agents spawned.
 - Discovery lineage: n/a.
 - Approach patterns: harness ceremony (improve loop, spec gate) was explained at length before any feature existed; skogix asked for the simple path. Prefer acting on bookkeeping over describing it.
+- Plan approval: n/a.
+
+## Meta-Session 2026-10-30
+- Scope accuracy: original F001-F004 drifted from the new foundation-first plan; replaced by one narrow F001.
+- Model calibration: spec gate (opus) needed four passes; each pass narrowed edge cases, never contradicted earlier answers.
+- Discovery lineage: n/a.
+- Approach patterns: answering gate questions from the repo docs plus sensible defaults worked; only genuine scope questions (step-1 bullets) were left open for skogix.
 - Plan approval: n/a.
