@@ -1,0 +1,3 @@
+{"file":"one.md","verdict":"invalid","reasons":["duplicate-name"]}
+{"file":"three.md","verdict":"valid","reasons":[]}
+{"file":"two.md","verdict":"invalid","reasons":["duplicate-name"]}
