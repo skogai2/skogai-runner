@@ -2,13 +2,13 @@
   "project": "skogai-runner",
   "created": "2026-10-29T15:50:22Z",
   "total_features": 1,
-  "passing": 0,
+  "passing": 1,
   "features": [
     {
       "id": "F001",
       "description": "Relationship contract checker, by example (plan step 1, relationships only). An argc script src/core/contract/argc.sh with command `check <file>...` reads each Markdown file's frontmatter: YAML between a first line exactly `---` and the next line exactly `---`, parsed with yq v4. Keys (names provisional): name (required string matching ^[a-z][a-z0-9-]*$), description (optional string), depends_on (list of module names, each matching the same pattern), reads, writes, owns, watches (lists of non-empty paths relative to the file's directory), defaults (optional mapping; contents unchecked, deferred).\nOutput: stdout is JSONL, one compact JSON object per argument in argument order: {\"file\": <path as given>, \"verdict\": \"valid\"|\"invalid\", \"reasons\": [...]}; reasons are unique, sorted, empty when valid. Invalid input is a verdict: exit 0 whenever every argument got a verdict. Exit 2, stderr diagnostic, empty stdout: no arguments, or any argument that does not exist, is a directory, or is unreadable. Exit 1, stderr diagnostic, empty stdout: yq or jq not on PATH; this is checked first, before arguments, so exit 1 wins over exit 2. Pure read: writes no files; repeated runs give byte-identical output.\nPer-file reasons. Parse stage, which stops further checks so the parse reason is the only one: no-frontmatter (first line not `---`, including an empty file), unterminated-frontmatter (no closing `---`), invalid-yaml (yq rejects the block), not-a-mapping (block parses but is empty, a scalar, or a list). Field stage, all collected: unknown-key (top-level key not listed above); missing-name (name absent or null); wrong-type (name, description, a depends_on entry, or a path in reads/writes/owns/watches that is not a string, an empty-string path, a relationship key that is not a list, defaults not a mapping); invalid-name (the file's own name or any depends_on entry not matching the pattern); path-outside-scope (absolute path, or a path whose lexical normalisation leaves the file's directory; `.` itself is inside). Lexical normalisation, used everywhere paths are compared: collapse repeated slashes, drop trailing slashes, resolve `.` and `..` textually, never resolve symlinks; so \"out/\", \"out//\" and \"./out\" all equal \"out\"; write-not-owned (a writes entry whose normalised form does not exactly equal a normalised owns entry; owning a directory does not cover paths under it).\nA value that gets wrong-type is excluded from every other check (invalid-name, path-outside-scope, write-not-owned, and all cross-file checks); a file whose name is wrong-type provides no name.\nCross-file reasons, over every file in the call that reached the field stage with a string name, valid or not: missing-dependency (a depends_on name provided by no such file; self-dependency and cycles are valid); duplicate-name (two distinct files declare the same name; each gets it); ownership-conflict (two distinct files own paths that are equal after resolving each against its own file's directory and lexical normalisation; each gets it). Files are distinct by lexically normalised absolute path, so the same file given twice, under any spelling, yields two objects identical apart from \"file\" and never conflicts with itself.\nEvidence (QA binding): corpus + unit, in tests/contract.bats. Each tests/fixtures/contract/valid/*.md is checked alone and is valid; each tests/fixtures/contract/valid/<case>/ directory is checked as one call and every file is valid (includes a satisfied depends_on). Each tests/fixtures/contract/invalid/<reason>/*.md is checked alone and yields invalid with exactly that reason; each tests/fixtures/contract/invalid/<reason>/<case>/ directory (missing-dependency, duplicate-name, ownership-conflict) holds its .md files plus expected.jsonl; the test cds into that directory and checks its *.md files as one call with bare file names, sorted with LC_ALL=C, and stdout must equal expected.jsonl byte for byte, which fixes every file's verdict and exact reasons. The test also asserts exit 0/1/2 cases, every stdout line parses with jq -c, the fixture tree is unchanged after a run, and two runs are byte-identical.\nOut of scope, recorded in context_summary as open plan-step-1 items: operation identity/retry/intent revisions, and configuration ownership/precedence.",
       "priority": 1,
-      "status": "pending",
+      "status": "passing",
       "scope": [
         "src/core/contract/",
         "tests/contract.bats",
@@ -17,8 +17,8 @@
       "depends_on": [],
       "assigned_to": null,
       "test_file": "tests/contract.bats",
-      "coverage": null,
-      "notes": null,
+      "coverage": "n/a",
+      "notes": "implemented 2026-10-30: src/core/contract/argc.sh, 11 tests in tests/contract.bats over 41 fixtures; unreadable-file test skips as root",
       "correction_cycles": 0,
       "scope_expansions": [],
       "approaches_tried": [],

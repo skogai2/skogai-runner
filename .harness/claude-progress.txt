@@ -18,3 +18,8 @@
 - New F001 sent to spec gate; plan steps 2-4 (workorder, JSONL evidence, bundle) wait on F001.
 - Open for skogix: capability enforcement mechanism for step 2 (how the environment rejects out-of-scope writes); settings ownership split mise vs git config.
 - Spec gate PASS on F001 after 4 passes; written to features.json with spec stamp. Next: /harness-continue on F001.
+
+## Session 3 - F001 built (2026-10-30)
+- Implemented F001 as specified: src/core/contract/argc.sh (bash parse stage, one jq program for field + cross-file rules).
+- tests/contract.bats + tests/fixtures/contract/ (valid, invalid/<reason>, 3 cross-file cases with expected.jsonl). bats tests: 34/34 (1 skip as root).
+- Next: plan step 2, one hand-prepared workorder that uses this checker. Blocked only on the capability-enforcement decision.

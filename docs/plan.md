@@ -39,4 +39,4 @@ Continue the existing module, memory, type, runner, bootstrap, and installation 
 
 ## Current status
 
-The vision and instructions are documented. The registry runner and its Bats suite exist. The workorder lifecycle, event log, capability enforcement, and Markdown+ relationship contracts above remain planned. The next implementation task is the concrete contract examples in step 1, followed by the local workorder in step 2.
+The vision and instructions are documented. The registry runner and its Bats suite exist. The relationship contract checker (`src/core/contract/argc.sh`, step 1 relationships only) is implemented and tested. The workorder lifecycle, event log, and capability enforcement remain planned. The next implementation task is the local workorder in step 2.
