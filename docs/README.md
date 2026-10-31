@@ -4,6 +4,9 @@ Start with the [project README](../README.md) for setup, then [runner.md](runner
 
 | Document | Purpose |
 | --- | --- |
+| [Why](why.md) | The problem, why a command runner, and the principles behind it |
+| [History](history.md) | How skogai 3.0 came to be and where it is going |
+| [Markdown+](markdown-plus.md) | Frontmatter as state, body as text, and the relationships it declares |
 | [Runner](runner.md) | Registry, generated commands, paths, completion, and failure behavior |
 | [argc guide](argc-guide.md) | Upstream roles, reference links, source revisions, and local compatibility |
 | [Design direction](design.md) | Active vision, foundational guarantees, and workorder lifecycle |
