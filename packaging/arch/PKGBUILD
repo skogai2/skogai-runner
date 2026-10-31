@@ -1,7 +1,7 @@
 # skogai core into /usr/share/skogai. builds the repo's committed HEAD, not
 # the working tree; makepkg's own src/ and pkg/ stay in this directory
 pkgname=skogai-runner-git
-pkgver=0
+pkgver=r40.be9c9cb
 pkgrel=1
 pkgdesc='skogai main runner: one argc for every registered command file'
 arch=(any)
