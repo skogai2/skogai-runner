@@ -21,7 +21,7 @@ These are hand-prepared workorders, not the [step 2 lifecycle](../../docs/plan.m
 A Markdown+ file. The frontmatter is what the [contract checker](../../src/core/contract/argc.sh) can verify. The body is the instruction.
 
 - `name`: lowercase, one segment, unique. Also the branch and PR title suffix.
-- `owns`: the only paths the agent may create or change, relative to the repo root. Two open workorders must never own the same path. That is what makes handing them out in parallel safe.
+- `owns`: the only files the agent may create or change, relative to the repo root. Two open workorders must never own the same path. That is what makes handing them out in parallel safe. List individual files, never directories: the checker only flags identical paths, so `examples/` and `examples/demo.sh` would both pass.
 - `reads`: what the agent should read first. It may read anything, but this is the context it needs.
 - Body sections: **Intent** (why), **Deliverable** (what exists when done), **Acceptance** (commands that must pass), **Out of scope**, **Report back**.
 
@@ -47,4 +47,5 @@ These came up while writing this queue. They are recorded here, not settled.
 
 - **Path base.** The checker resolves `owns` relative to the declaring file's own directory, and rejects `..` and absolute paths. Workorders mean repo-root-relative paths. Conflict detection is still correct because every open workorder sits in the same folder. The `path-outside-scope` rule does not mark the repo boundary for these files.
 - **`depends_on` after completion.** A dependency that moves to `done/` drops out of a check over `open/` and shows up as `missing-dependency`. Checking `done/` as well would make finished workorders' `owns` conflict with new ones. Until this is decided, open workorders are independent and don't use `depends_on`.
+- **Directory overlap.** `ownership-conflict` compares normalized paths for equality and doesn't detect a parent directory and its child. Workorders own files only until the checker covers that case or it is decided that it shouldn't.
 - **Enforcement.** `owns` is declared, not enforced. Review is the only guard until step 2 decides on a mechanism.
