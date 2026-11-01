@@ -23,6 +23,7 @@ Tools come from `mise.toml` (argc, jq, yq, bats, all `latest`): `mise install`. 
 Run a script directly with `argc --argc-run <script> <cmd> ...`. From a checkout, point the runner at temporary paths so nothing touches real `~/Argcfile.sh` or `~/.config/argc/commands`:
 
 ```bash
+tmp="$(mktemp -d)"
 export ARGC_COMMANDS="$tmp/commands" ARGC_MAIN="$tmp/Argcfile.sh" ARGC_TEMPLATE="$PWD/src/core/main.sh"
 argc --argc-run "$ARGC_TEMPLATE" register <file> <name>
 argc --argc-run "$ARGC_MAIN" --help
