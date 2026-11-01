@@ -7,9 +7,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Read @AGENTS.md (working principles) and `.harness/context_summary.md` (decisions, gotchas) at session start. `docs/design.md` and `docs/plan.md` hold the vision and the foundation-first sequence.
 
+**Continuing work** goes through [.skogai/workorders/WORKORDERS.md](.skogai/workorders/WORKORDERS.md). In the lead session, check the queue there and hand out `open/` workorders to agents. If you were given a workorder, implement only that one, inside its `owns`.
+
 ## Commands
 
-Tools come from `mise.toml` (argc, jq, yq, bats, all `latest`): `mise install`.
+Tools come from `mise.toml` (argc, jq, yq, bats, all `latest`): `mise install`. Run checks through mise (`mise run test`, `mise exec -- bats ...`). The system `yq` may be a different program from mikefarah's yq, and then every contract test fails with `invalid-yaml`.
 
 - `mise run test`: the whole Bats suite (`bats tests`)
 - `bats tests/main.bats` or `bats tests/contract.bats`: one file
