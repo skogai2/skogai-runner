@@ -3,7 +3,8 @@
 #
 # one compact JSON verdict per file on stdout, in argument order. an invalid
 # file is an answer, not a failure: exit 0 whenever every file got a verdict.
-# exit 1: yq or jq missing. exit 2: no files, or one is missing, a directory,
+# exit 1: yq or jq missing, or yq is not mikefarah's yq v4 or newer (another
+# program named yq would turn every file into invalid-yaml). exit 2: no files, or one is missing, a directory,
 # or unreadable. stdout stays empty on both. reads only, writes nothing.
 # @meta binname contract
 
@@ -13,10 +14,17 @@ set -euo pipefail
 # @cmd check each file, and the relationships between all of them
 # @arg file*                           Markdown files with frontmatter
 check() {
-    local tool file files=(${argc_file[@]+"${argc_file[@]}"})
+    local tool file version files=(${argc_file[@]+"${argc_file[@]}"})
     for tool in yq jq; do
         command -v "$tool" >/dev/null || { printf 'missing tool: %s\n' "$tool" >&2; return 1; }
     done
+    # mikefarah's yq v4+ prints "yq (https://github.com/mikefarah/yq/) version v4.x.y";
+    # the python wrapper prints "yq 3.x" and mikefarah's v3 "yq version 3.x"
+    version="$(command yq --version 2>&1)" || true
+    version="${version%%$'\n'*}"
+    [[ "$version" =~ ^yq\ \(https://github\.com/mikefarah/yq/?\)\ version\ v?([0-9]+)\. ]] &&
+        ((BASH_REMATCH[1] >= 4)) ||
+        { printf 'wrong yq: need mikefarah/yq v4 or newer, found: %s\n' "$version" >&2; return 1; }
     cd "${ARGC_PWD:-$PWD}"
     ((${#files[@]})) || { printf 'usage: check <file>...\n' >&2; return 2; }
     for file in "${files[@]}"; do
