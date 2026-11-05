@@ -112,6 +112,21 @@ check() { argc --argc-run "$CONTRACT" check "$@"; }
     [[ "$stderr" == *jq* ]]
 }
 
+@test "a yq that is not mikefarah's v4 or newer is exit 1, before any verdict" {
+    local bin="$BATS_TEST_TMPDIR/bin" version
+    mkdir -p "$bin"
+    # the python yq/jq wrapper, and mikefarah's yq v3
+    for version in 'yq 3.4.3' 'yq version 3.4.1'; do
+        printf '#!/bin/sh\n[ "$1" = --version ] && { echo "%s"; exit 0; }\nexit 1\n' "$version" >"$bin/yq"
+        chmod +x "$bin/yq"
+        run --separate-stderr env PATH="$bin:$PATH" argc --argc-run "$CONTRACT" check "$FIXTURES/valid/minimal.md"
+        [ "$status" -eq 1 ] || { echo "$version: $status $output"; return 1; }
+        [ -z "$output" ]
+        [[ "$stderr" == *"yq"*"mikefarah"* ]]
+        [ "$(wc -l <<<"$stderr")" -eq 1 ]
+    done
+}
+
 @test "a check writes nothing and repeats byte for byte" {
     cd "$FIXTURES"
     local before files first
