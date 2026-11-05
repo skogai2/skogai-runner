@@ -18,7 +18,7 @@
       "assigned_to": null,
       "test_file": "tests/contract.bats",
       "coverage": "n/a",
-      "notes": "implemented 2026-10-30: src/core/contract/argc.sh, 11 tests in tests/contract.bats over 41 fixtures; unreadable-file test skips as root",
+      "notes": "implemented 2026-10-30: src/core/contract/argc.sh, 12 tests in tests/contract.bats over 41 fixtures; unreadable-file test skips as root. 2026-11-05 (wo/contract-yq-flavor, PR #4): exit 1, stderr diagnostic, empty stdout also when `yq --version` does not identify mikefarah yq v4 or newer (python wrapper, mikefarah v3); checked after tool presence and before arguments, so a different yq never produces a verdict",
       "correction_cycles": 0,
       "scope_expansions": [],
       "approaches_tried": [],
