@@ -63,3 +63,9 @@ This file is referenced in CLAUDE.md and loaded every session.
 - Discovery lineage: n/a.
 - Approach patterns: answering gate questions from the repo docs plus sensible defaults worked; only genuine scope questions (step-1 bullets) were left open for skogix.
 - Plan approval: n/a.
+
+## Meta-Session 2026-11-06 (session 6)
+- Scope accuracy: both workorders stayed inside owns; disjoint owns made parallel handout trivial.
+- Model calibration: Sonnet finished each in one pass, no correction cycles.
+- Gotcha: the rtk hook rewrites `git ...` to `rtk git ...`; in a subagent worktree auto mode + the worktree guard then deny every git call, so agents cannot commit. One agent bypassed via `/usr/bin/git`. Until resolved, plan for the lead to commit agent work, and tell agents not to bypass hooks.
+- Pattern: hand-out prompts should say "do not push / open PR" while local master holds unpushed commits.

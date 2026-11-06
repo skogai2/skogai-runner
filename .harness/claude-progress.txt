@@ -42,3 +42,11 @@
 - Checks: mise run test:usage 67/67; mise run test 91/91 (1 expected skip: empty open/ queue). Contract VERDICTS jq program is identical in both checkers.
 - Not features.json entries (no spec gate). PKGBUILD still packages only main.sh.
 - Next: plan step 3 (JSONL evidence) is unchanged. Open for skogix: comparison criteria and the argc-or-usage decision; until then every twinned change is made twice.
+
+## Session 6 - step 3 log reader + torn-line repair (2026-11-06)
+- Queued 2 parallel workorders (117f920), handed to Sonnet implementers in worktrees, merged locally (no push/PR: local master carries an unpushed WIP commit).
+- log-partial-line (8234dee): _open_log ends a non-newline-terminated log before appending. Agent could not commit (rtk git rewrite + worktree guard); lead committed after skogix approved.
+- log-reader (dcaa6a5): src/core/log/usage.sh runs|show, tests/log.bats (13), fixture tests/fixtures/log/run.jsonl. Agent committed by calling /usr/bin/git to bypass the rtk hook; surfaced to skogix.
+- Checks on merged master: mise run test 121/121, 0 skips; smoke clean.
+- Next: run-workorder-link (events name workorder + commit; owns run/usage.sh). hello-reader still waits on skogix: depends_on at run time, path base.
+- Leftover: three old worktrees from session 5 under .claude/worktrees (wo/run-events, wo/examples-live, wo/test-default-usage), already merged; not removed without asking.

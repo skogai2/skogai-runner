@@ -14,7 +14,8 @@ These are hand-prepared workorders, not the [step 2 lifecycle](../../docs/plan.m
 
 - `open/*.md`: ready to hand out. Every file in this folder can run in parallel with the others.
 - `done/*.md`: finished. The lead moves a workorder here in the same change that lands its PR.
-- Next (`run-events` has landed): a `hello-reader` example that `depends_on` hello and reads its `greeting.txt`. This needs `depends_on` to work at run time and settles the path-base question below, so it waits until then. The staged runner (`src/core/run/usage.sh`) still isn't used for handing out workorders: agents edit the repo directly.
+- Next (`log-partial-line` and `log-reader` have landed): a `run-workorder-link` workorder, so events name the workorder and commit they belong to. It owns `src/core/run/usage.sh`.
+- After that: a `hello-reader` example that `depends_on` hello and reads its `greeting.txt`. This needs `depends_on` to work at run time and settles the path-base question below, so it waits until then. The staged runner (`src/core/run/usage.sh`) still isn't used for handing out workorders: agents edit the repo directly.
 
 ## A workorder
 

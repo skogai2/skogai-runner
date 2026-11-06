@@ -91,7 +91,7 @@ Implemented and verified (`tests/run-events.bats`, workorder log-partial-line). 
 - **Append failure after an effect.** When an `apply` or `end` append fails after a file was already moved into place, the runner stops with exit 1. The effect stays, and the log lacks its record. Recovering from this is not handled. (The partial-last-line half is implemented, see "Partial last line".)
 - **Rotation and size.** The log only grows.
 - **Concurrency.** Each event is one `printf` to an `O_APPEND` file, which in practice keeps lines from interleaving on a local filesystem for lines this short. Nothing locks the file, and nobody has tested concurrent runs.
-- **Reader or summary command.** There is none yet. `jq 'select(.run == "<id>")' run.jsonl` is the reader.
+- **Reader or summary command.** Implemented and verified (`tests/log.bats`): `src/core/log/usage.sh` is read-only. `runs` prints one `{run, module, revision, started, ended, outcome, verdict, changed}` per run, and an interrupted run (no `end`) has `null` outcome. `show <run>` (full id or unique prefix) prints that run's lines byte-for-byte. Unreadable lines are skipped and counted on stderr. Still open: it is not registered with `skogai`, and `runs` holds the whole log in memory.
 - **Workorder link.** Events do not name a workorder, a session or a commit. Linking intent → run → Git diff is the next step of plan step 3.
 - **Messages and tool use.** Only the runner's own steps are recorded. Agent messages and tool calls are not.
 - **Tests and the real log.** Fixed at merge (2026-11-06): `tests/run.bats` and `tests/examples.bats` now set `XDG_STATE_HOME` under the test dir and unset `SKOGAI_LOG`, as `tests/run-events.bats` does. Any new test that calls the runner must do the same.
