@@ -23,3 +23,8 @@
 - Implemented F001 as specified: src/core/contract/argc.sh (bash parse stage, one jq program for field + cross-file rules).
 - tests/contract.bats + tests/fixtures/contract/ (valid, invalid/<reason>, 3 cross-file cases with expected.jsonl). bats tests: 34/34 (1 skip as root).
 - Next: plan step 2, one hand-prepared workorder that uses this checker. Blocked only on the capability-enforcement decision.
+
+## Session 4 - Step 2 unblocked (2026-11-06)
+- Orientation: clean tree, smoke + bats 35/36 (1 expected skip: empty open/ queue). CLI 2.1.312 -> 2.1.318, no requalification.
+- Decision (skogix): writable-scope enforcement = Podman, staged output (repo ro, one writable output dir, runner checks output against `owns` then moves atomically). Recorded in context_summary.md and WORKORDERS.md.
+- Next: write F002 spec for plan step 2 (one module, one command, one owned output, enforced scope) and send it to the spec gate.
