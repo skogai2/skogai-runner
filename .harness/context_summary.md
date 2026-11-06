@@ -4,9 +4,9 @@ Persistent record of architectural decisions, discovered patterns, gotchas, and 
 This file is referenced in CLAUDE.md and loaded every session.
 
 ## Active Context
-- Current priority: establish functional composition, idempotent effects, immutable intent/events, strong types, and small Unix interfaces before expanding modules.
-- The earlier plans remain active. Read `AGENTS.md`, `docs/design.md`, and `docs/plan.md`.
-- Next: concrete relationship/operation contracts, then one hand-prepared local workorder with one command and one owned output. Workorder preparation, JSONL evidence, and capability enforcement are planned, not implemented.
+- Steps 1-2 done (F001 checker, F002 staged Podman run). usage + mise is the interface; argc twins frozen (2026-11-06).
+- Next: step 3 evidence on `src/core/run/usage.sh` (workorder `run-events`), live-test examples (`examples-live`), `mise run test` on usage (`test-default-usage`). Then a second module that `depends_on` hello.
+- Not implemented: the workorder lifecycle through the runner (agents still edit the repo directly), `depends_on` at run time, config precedence.
 
 ## Cross-Cutting Concerns
 - Stack: bash + argc, tests in bats, tools managed via mise (`latest`, not pinned) (argc, jq, yq, bats); Arch container (`mise run test:container`) and PKGBUILD in `packaging/arch/`
@@ -21,6 +21,9 @@ This file is referenced in CLAUDE.md and loaded every session.
 
 - F001 is the relationship contract checker only (spec-gated 2026-10-30). Invalid input is a verdict (JSONL on stdout, exit 0); exit 2 bad args, exit 1 missing yq/jq. Old proposals (split main.sh, .skogai override, single binary) deferred per docs/plan.md (2026-10-30)
 - Open plan-step-1 items, not yet features: operation identity / retry / linked intent revisions; configuration ownership and precedence (mise vs git config vs env vs module defaults). Step 2 writable-scope enforcement decided by skogix (2026-11-06): Podman, staged output. The command runs in Podman with the repo mounted read-only (as `mise run test:container` does) plus one empty writable output dir; the runner then verifies the output dir holds only paths in `owns` and only then moves them into place atomically. Out-of-scope writes are impossible inside the container (ro mount) and out-of-scope outputs are rejected before any effect. Implemented as F002 (2026-11-06): src/core/run/argc.sh check|run, example examples/hello.
+
+- usage + mise chosen over argc as the interface for user, agents and modules (skogix, 2026-11-06). New work goes into the usage files only; the argc files are frozen, not removed. Why: one interface instead of twinning every change; usage gives layered registries (`SKOGAI_COMMANDS`), `effect=` for agents via `usage mcp`, and mise integration.
+- Evidence starts from the skogai-core hook log shape (`/home/skogix/skogai/.skogai/logs/skogai-core/log.jsonl`: `{ts, event, action?, input}`), extended with run identity and outcome, not a new format (2026-11-06).
 
 ### Patterns
 - Tests isolate HOME under `$BATS_TEST_TMPDIR` and drive the template via `argc --argc-run`.

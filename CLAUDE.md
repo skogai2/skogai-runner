@@ -33,6 +33,8 @@ The README demo uses `scripts/memory.sh`, which is not in this checkout. Use any
 
 ## Architecture
 
+**usage is the interface going forward (skogix, 2026-11-06).** New work lands in the usage files (`main-usage.sh`, `contract/usage.sh`, `run/usage.sh`, `examples/usage/`, `tests/fixtures/run-usage/`). The argc files below stay as they are, frozen: they are not extended, and whether to remove them is undecided. The "goes into both" rules for the twins no longer apply to new features.
+
 Everything is Bash, and argc comment tags (`# @cmd`, `# @arg`, `# @meta`, `# @env`) form the interface: they provide parsing, help, completion and JSON export (`argc --argc-export`). Each script ends with `eval "$(argc --argc-eval "$0" "$@")"`, and argc sets `argc_*` variables before the function runs.
 
 **`src/core/main.sh`: the packaged runner.** It is a template, not the file users run. `sync` copies the template minus its final eval line, adds one generated recipe per symlink in the registry (`ARGC_COMMANDS/<name>.sh`), and puts the eval line back. It validates the result with `argc --argc-export`, then moves it over `ARGC_MAIN` in one step. Each generated recipe calls `_delegate`, which `cd`s to `ARGC_PWD` (the caller's directory, since argc runs from the Argcfile's directory) and runs `argc --argc-run` on the registered script. `_choice_delegate` sends completion to the child script's own `--argc-compgen`. Things to keep intact:
