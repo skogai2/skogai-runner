@@ -12,6 +12,9 @@ setup() {
     # rootless podman keeps its images under the data dir; keep that, isolate the rest
     export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
     export HOME="$BATS_TEST_TMPDIR/home" XDG_CONFIG_HOME="$BATS_TEST_TMPDIR/home/.config"
+    # the runner logs to $SKOGAI_LOG or $XDG_STATE_HOME: keep both off the real ones
+    export XDG_STATE_HOME="$BATS_TEST_TMPDIR/state"
+    unset SKOGAI_LOG
     export TMPDIR="$BATS_TEST_TMPDIR/tmp"
     mkdir -p "$HOME" "$TMPDIR"
     W="$BATS_TEST_TMPDIR/work"

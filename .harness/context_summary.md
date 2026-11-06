@@ -5,7 +5,7 @@ This file is referenced in CLAUDE.md and loaded every session.
 
 ## Active Context
 - Steps 1-2 done (F001 checker, F002 staged Podman run). usage + mise is the interface; argc twins frozen (2026-11-06).
-- Next: step 3 evidence on `src/core/run/usage.sh` (workorder `run-events`), live-test examples (`examples-live`), `mise run test` on usage (`test-default-usage`). Then a second module that `depends_on` hello.
+- Landed 2026-11-06: run events (`docs/evidence.md`), live-test examples (`tests/examples.bats`), `mise run test` on usage. Next: a second module that `depends_on` hello; step 3 leftovers (recovery, reader, workorder link).
 - Not implemented: the workorder lifecycle through the runner (agents still edit the repo directly), `depends_on` at run time, config precedence.
 
 ## Cross-Cutting Concerns
@@ -31,6 +31,8 @@ This file is referenced in CLAUDE.md and loaded every session.
 ### Gotchas
 - Rootless podman finds its images through XDG_DATA_HOME (default $HOME/.local/share). Tests that isolate HOME must capture and export XDG_DATA_HOME first, or `podman image exists` fails. This host exports XDG_DATA_HOME already, which hides the problem.
 - Do not add `:Z` to podman mounts of module dirs: SELinux relabelling changes the host directory, which is an effect outside `owns`.
+- The runner logs to `${XDG_STATE_HOME:-$HOME/.local/state}/skogai/run.jsonl`. This host exports XDG_STATE_HOME, so isolating HOME alone leaks test runs into the real log: tests must set XDG_STATE_HOME and unset SKOGAI_LOG.
+- Workorder agents in worktrees under ~/skogai-runner/.claude/worktrees: a hook refuses plain `git` (rtk wrapper); they used `/usr/bin/git`. `mise tasks` there also picks up the parent checkout's mise.toml.
 - `mise run test` now depends on `mise run image` (cached `podman build`, a no-op without podman).
 - No coverage tooling for bash/bats yet: the 95% coverage gate cannot be measured. `full_test` runs `bats tests` only. Enabling coverage (e.g. bashcov/kcov) needs its own feature if wanted.
 - `ssh -T git@github.com` fails (no key loaded); remote is HTTPS under `skogai2`. The identity hook checks name/email only.

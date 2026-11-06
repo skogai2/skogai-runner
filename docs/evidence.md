@@ -90,4 +90,4 @@ A declaration rejected at check time (the `badmeta` fixture) is only `check` (ou
 - **Reader or summary command.** There is none yet. `jq 'select(.run == "<id>")' run.jsonl` is the reader.
 - **Workorder link.** Events do not name a workorder, a session or a commit. Linking intent → run → Git diff is the next step of plan step 3.
 - **Messages and tool use.** Only the runner's own steps are recorded. Agent messages and tool calls are not.
-- **Tests and the real log.** `tests/run.bats` (not owned by this workorder) isolates `HOME` but not `XDG_STATE_HOME`. On a host that exports `XDG_STATE_HOME`, `RUN_IMPL=usage bats tests/run.bats` appends to the real `~/.local/state/skogai/run.jsonl`. `tests/run-events.bats` isolates both.
+- **Tests and the real log.** Fixed at merge (2026-11-06): `tests/run.bats` and `tests/examples.bats` now set `XDG_STATE_HOME` under the test dir and unset `SKOGAI_LOG`, as `tests/run-events.bats` does. Any new test that calls the runner must do the same.
