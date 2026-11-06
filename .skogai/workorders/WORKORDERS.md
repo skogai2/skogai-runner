@@ -14,7 +14,8 @@ These are hand-prepared workorders, not the [step 2 lifecycle](../../docs/plan.m
 
 - `open/*.md`: ready to hand out. Every file in this folder can run in parallel with the others.
 - `done/*.md`: finished. The lead moves a workorder here in the same change that lands its PR.
-- Next, after `run-events` lands: a `hello-reader` example that `depends_on` hello and reads its `greeting.txt`. This needs `depends_on` to work at run time and settles the path-base question below, so it waits until then. The staged runner (`src/core/run/usage.sh`) still isn't used for handing out workorders: agents edit the repo directly.
+- Next (`log-partial-line` and `log-reader` have landed): a `run-workorder-link` workorder, so events name the workorder and commit they belong to. It owns `src/core/run/usage.sh`.
+- After that: a `hello-reader` example that `depends_on` hello and reads its `greeting.txt`. This needs `depends_on` to work at run time and settles the path-base question below, so it waits until then. The staged runner (`src/core/run/usage.sh`) still isn't used for handing out workorders: agents edit the repo directly.
 
 ## A workorder
 
@@ -32,7 +33,7 @@ Keep each one finishable in a single session with a diff that someone can review
 Before handing anything out, check the queue. Every line must be `"verdict":"valid"`:
 
 ```bash
-mise exec -- argc --argc-run src/core/contract/argc.sh check .skogai/workorders/open/*.md
+mise exec -- argc --argc-run usage bash src/core/contract/usage.sh check .skogai/workorders/open/*.md
 ```
 
 Hand a workorder to an agent with this prompt, filling in `<name>`:
