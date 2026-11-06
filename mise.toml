@@ -15,9 +15,9 @@ depends = ["image"]
 run = "bats tests"
 
 [tasks."test:usage"]
-description = "the contract and run tests against the usage twins of contract/argc.sh and run/argc.sh"
+description = "the usage twins: contract and run tests against contract/usage.sh and run/usage.sh, plus main-usage.sh"
 depends = ["image"]
-run = "CONTRACT_IMPL=usage RUN_IMPL=usage bats tests/contract.bats tests/run.bats"
+run = "CONTRACT_IMPL=usage RUN_IMPL=usage bats tests/contract.bats tests/run.bats tests/main-usage.bats"
 
 [tasks."test:container"]
 description = "bats tests in a clean arch container"
