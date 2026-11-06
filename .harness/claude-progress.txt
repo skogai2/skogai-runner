@@ -31,3 +31,9 @@
 - F002 spec: gate ASK (16 questions, answered by lead), then PASS; stamped.
 - F002 implemented: src/core/run/argc.sh (check|run), examples/hello, tests/run.bats (29) + tests/fixtures/run, mise task `image`. bats tests: 65/65 (1 expected skip); test:container 65 with 10 podman skips + 1. Enforcement tests mutation-checked.
 - Next: plan step 3 (JSONL evidence). Open: the 16 gate answers were lead choices; skogix may revisit (notably `test` depending on `image`, content-only comparison, depends_on unrunnable).
+
+## Session 5 - usage twins recorded (2026-11-06)
+- Added usage twins of all three argc pieces for an argc vs usage + mise comparison: contract/usage.sh (921b91c), run/usage.sh + examples/usage/hello + tests/fixtures/run-usage (80688bf), main-usage.sh (d00a5da), layered SKOGAI_COMMANDS registry (2b87210). Completion for skogai documented in docs/runner.md (7edeef9, manual check only).
+- Checks: mise run test:usage 67/67; mise run test 91/91 (1 expected skip: empty open/ queue). Contract VERDICTS jq program is identical in both checkers.
+- Not features.json entries (no spec gate). PKGBUILD still packages only main.sh.
+- Next: plan step 3 (JSONL evidence) is unchanged. Open for skogix: comparison criteria and the argc-or-usage decision; until then every twinned change is made twice.

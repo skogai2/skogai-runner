@@ -21,6 +21,7 @@ This file is referenced in CLAUDE.md and loaded every session.
 
 - F001 is the relationship contract checker only (spec-gated 2026-10-30). Invalid input is a verdict (JSONL on stdout, exit 0); exit 2 bad args, exit 1 missing yq/jq. Old proposals (split main.sh, .skogai override, single binary) deferred per docs/plan.md (2026-10-30)
 - Open plan-step-1 items, not yet features: operation identity / retry / linked intent revisions; configuration ownership and precedence (mise vs git config vs env vs module defaults). Step 2 writable-scope enforcement decided by skogix (2026-11-06): Podman, staged output. The command runs in Podman with the repo mounted read-only (as `mise run test:container` does) plus one empty writable output dir; the runner then verifies the output dir holds only paths in `owns` and only then moves them into place atomically. Out-of-scope writes are impossible inside the container (ro mount) and out-of-scope outputs are rejected before any effect. Implemented as F002 (2026-11-06): src/core/run/argc.sh check|run, example examples/hello.
+- usage twins (2026-11-06): to compare argc with usage + mise, every argc piece has a usage twin with the same behavior and tests: `contract/usage.sh`, `run/usage.sh` (+ `examples/usage/hello`, `tests/fixtures/run-usage`), and `main-usage.sh` (`skogai`: no template/sync, usage `mount` reads the registry live; `SKOGAI_COMMANDS` is a `:`-list of registry layers, nearest first). Not spec-gated features; no entry in features.json. Until the comparison is decided, a change to a rule, runner, example or fixture goes into both twins. Open for skogix: criteria and decision for argc vs usage, and whether packaging (PKGBUILD) ships `skogai`.
 
 ### Patterns
 - Tests isolate HOME under `$BATS_TEST_TMPDIR` and drive the template via `argc --argc-run`.
@@ -28,6 +29,8 @@ This file is referenced in CLAUDE.md and loaded every session.
 ### Gotchas
 - Rootless podman finds its images through XDG_DATA_HOME (default $HOME/.local/share). Tests that isolate HOME must capture and export XDG_DATA_HOME first, or `podman image exists` fails. This host exports XDG_DATA_HOME already, which hides the problem.
 - Do not add `:Z` to podman mounts of module dirs: SELinux relabelling changes the host directory, which is an effect outside `owns`.
+- `mise run test` stays on argc for the twinned files; `mise run test:usage` runs contract.bats and run.bats with `CONTRACT_IMPL=usage RUN_IMPL=usage` plus main-usage.bats. Both suites must pass after a twinned change.
+- `contract/usage.sh` receives the variadic `file` as one shell-quoted string (`eval "files=(...)"`); under a usage mount, `usage_cmd` is the mounted script's `bin`, so main-usage.sh dispatches on argv.
 - `mise run test` now depends on `mise run image` (cached `podman build`, a no-op without podman).
 - No coverage tooling for bash/bats yet: the 95% coverage gate cannot be measured. `full_test` runs `bats tests` only. Enabling coverage (e.g. bashcov/kcov) needs its own feature if wanted.
 - `ssh -T git@github.com` fails (no key loaded); remote is HTTPS under `skogai2`. The identity hook checks name/email only.
