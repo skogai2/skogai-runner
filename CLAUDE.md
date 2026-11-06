@@ -51,6 +51,7 @@ Everything is Bash, and argc comment tags (`# @cmd`, `# @arg`, `# @meta`, `# @en
 - Dispatch reads the registered name from argv, not `usage_cmd`: under a mount, `usage_cmd` is named after the mounted script's `bin`.
 - `_delegate` unsets every `usage_*` before `exec usage bash <script>`, so the script parses its own arguments from scratch.
 - `_mount` must never fail: a gone target is emitted as a hidden catch-all (so running it reaches the clear "is gone" error), and a script that no longer lints gets a catch-all spec (so it fails alone, by itself). Names don't become functions, so only `register unregister ls help` are reserved.
+- `SKOGAI_COMMANDS` is a `:`-list of registry layers, nearest first (empty entries skipped, none at all is exit 2). Every lookup goes through `_resolve` (first layer with the name wins, gone links included), `_names` merges all layers, and `register`/`unregister` touch only the first layer. This replaces argc's "nearest Argcfile wins": a project puts its own layer in front, e.g. mise `[env] SKOGAI_COMMANDS = "{{config_root}}/.skogai/commands:{{env.HOME}}/.config/skogai/commands"`.
 - From a checkout, set `SKOGAI_MAIN="$PWD/src/core/main-usage.sh"` and point `SKOGAI_COMMANDS` at a temp dir; tests do both (`tests/main-usage.bats`).
 
 `mise run test:usage` runs `tests/contract.bats` and `tests/run.bats` against the twins (`CONTRACT_IMPL=usage RUN_IMPL=usage`) plus `tests/main-usage.bats`; `mise run test` stays on argc for the twinned files (and also runs `main-usage.bats`, which has no argc side).

@@ -226,3 +226,56 @@ complete() { usage complete-word --shell bash -f "$SKOGAI_MAIN" -- skogai "$@"; 
     run grep -nwE 'sed|awk' "$SKOGAI_MAIN"
     [ "$status" -eq 1 ]
 }
+
+# --- layers ------------------------------------------------------------------
+
+# a project layer in front of the home one, both under the test HOME
+layers() {
+    proj="$BATS_TEST_TMPDIR/proj/.skogai/commands"
+    home="$SKOGAI_COMMANDS"
+    export SKOGAI_COMMANDS="$proj:$home"
+    cp "$work/hello.sh" "$work/proj.sh"
+    printf '#!/usr/bin/env -S usage bash\n#USAGE about "the home one"\n#USAGE cmd "greet"\necho home\n' >"$work/home.sh"
+    SKOGAI_COMMANDS="$home" main register "$work/home.sh" hello
+    SKOGAI_COMMANDS="$home" main register "$work/home.sh" homeonly
+}
+
+@test "layers: names from every layer, the nearest one wins" {
+    layers
+    main register "$work/proj.sh" hello
+    [ "$(readlink "$proj/hello.sh")" = "$work/proj.sh" ]
+    [ "$(readlink "$home/hello.sh")" = "$work/home.sh" ]
+    run main hello greet bob
+    [ "$output" = "hi bob" ]
+    run main homeonly greet
+    [ "$output" = home ]
+    run main ls
+    [ "${#lines[@]}" -eq 2 ]
+    [[ "${lines[0]}" == hello*"$work/proj.sh" ]]
+    [[ "${lines[1]}" == homeonly*"$work/home.sh" ]]
+    run main --help
+    local line
+    for line in "${lines[@]}"; do [[ "$line" != *" hello "* ]] || [[ "$line" == *"greets people"* ]]; done
+    [[ "$output" == *"homeonly"*"the home one"* ]]
+    run complete hello ""
+    [[ "$output" == *where* ]]
+}
+
+@test "layers: unregister removes only the nearest, and says what is left" {
+    layers
+    main register "$work/proj.sh" hello
+    run main unregister hello
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"still registered in $home"* ]]
+    [ ! -L "$proj/hello.sh" ] && [ -L "$home/hello.sh" ]
+    run main hello greet
+    [ "$output" = home ]
+}
+
+@test "layers: empty entries are skipped, and no directory at all is exit 2" {
+    main register "$work/hello.sh" hello
+    SKOGAI_COMMANDS="::$SKOGAI_COMMANDS:" run main hello greet alice
+    [ "$output" = "hi alice" ]
+    SKOGAI_COMMANDS=":" run main ls
+    [ "$status" -eq 2 ]
+}

@@ -4,7 +4,7 @@
 #USAGE long_about """
 #USAGE `skogai <name> ...` runs the usage script registered as <name>, from the directory skogai was called in, with that script's own help, parsing and completion. `skogai register <file> <name>` adds one; there is nothing to sync.
 #USAGE
-#USAGE The registry is a directory of symlinks, $SKOGAI_COMMANDS (default ~/.config/skogai/commands). Registered commands reach usage through a mount, which calls this script by $SKOGAI_MAIN (default: `skogai` on PATH).
+#USAGE The registry is a directory of symlinks. $SKOGAI_COMMANDS (default ~/.config/skogai/commands) may list several, separated by `:`, nearest first: a name resolves to the first directory that has it, and register and unregister change only the first. A project can put its own directory in front of the home one, for instance from mise [env]. Registered commands reach usage through a mount, which calls this script by $SKOGAI_MAIN (default: `skogai` on PATH).
 #USAGE """
 #USAGE cmd "register" effect="write" help="register a usage script as `skogai <name>`" {
 #USAGE   arg "<file>" help="the usage script, linked, not copied"
@@ -34,7 +34,23 @@
 # shellcheck shell=bash disable=SC2154 # usage_* are exported by usage
 set -euo pipefail
 
-COMMANDS="${SKOGAI_COMMANDS:-${XDG_CONFIG_HOME:-$HOME/.config}/skogai/commands}"
+# the registry layers, nearest first; empty entries are skipped
+LAYERS=()
+IFS=: read -ra _split <<<"${SKOGAI_COMMANDS:-${XDG_CONFIG_HOME:-$HOME/.config}/skogai/commands}"
+for _dir in ${_split[@]+"${_split[@]}"}; do [[ -z "$_dir" ]] || LAYERS+=("$_dir"); done
+unset _split _dir
+((${#LAYERS[@]})) || { printf 'SKOGAI_COMMANDS names no directory\n' >&2; exit 2; }
+COMMANDS="${LAYERS[0]}"
+
+# the link a name resolves to: the first layer that has it, gone or not;
+# the nearest layer's path when none does
+_resolve() {
+    local dir
+    for dir in "${LAYERS[@]}"; do
+        [[ ! -e "$dir/$1.sh" && ! -L "$dir/$1.sh" ]] || { printf '%s\n' "$dir/$1.sh"; return 0; }
+    done
+    printf '%s\n' "$COMMANDS/$1.sh"
+}
 
 # names usage or this script already answer to
 _reserved() {
@@ -53,7 +69,10 @@ register() {
 }
 
 unregister() {
+    local still
     command rm -f -- "$COMMANDS/$usage_name.sh"
+    still="$(_resolve "$usage_name")"
+    [[ ! -e "$still" && ! -L "$still" ]] || printf '%s: still registered in %s\n' "$usage_name" "${still%/*}" >&2
 }
 
 list() {
@@ -63,19 +82,25 @@ list() {
         ((${#name} <= width)) || width=${#name}
     done < <(_names)
     for name in ${names[@]+"${names[@]}"}; do
-        file="$COMMANDS/$name.sh"
+        file="$(_resolve "$name")"
         printf '%-*s  %s' "$width" "$name" "$(command readlink -- "$file" || printf '%s' "$file")"
         [[ -e "$file" ]] && printf '\n' || printf ' (gone)\n'
     done
 }
 
+# every name once, in name order, across all layers
 _names() {
-    local file name
-    for file in "$COMMANDS"/*.sh; do
-        [[ -e "$file" || -L "$file" ]] || continue
-        name="${file##*/}"
-        printf '%s\n' "${name%.sh}"
+    local dir file name
+    local -A seen=()
+    for dir in "${LAYERS[@]}"; do
+        for file in "$dir"/*.sh; do
+            [[ -e "$file" || -L "$file" ]] || continue
+            name="${file##*/}"
+            seen["${name%.sh}"]=1
+        done
     done
+    ((${#seen[@]})) || return 0
+    printf '%s\n' "${!seen[@]}" | LC_ALL=C command sort
 }
 
 # one cmd per registered name. a gone target stays listed, hidden and taking
@@ -84,7 +109,7 @@ _names() {
 _mount() {
     local name file about
     while IFS= read -r name; do
-        file="$COMMANDS/$name.sh"
+        file="$(_resolve "$name")"
         if [[ ! -e "$file" ]]; then
             printf 'cmd "%s" hide=#true help="gone" {\n  arg "[args]..." var=#true\n}\n' "$name"
             continue
@@ -99,7 +124,8 @@ _mount() {
 # the script's spec, or, when it no longer lints, a catch-all so the script
 # still runs and reports its own problem
 _spec() {
-    local file="$COMMANDS/$usage_name.sh"
+    local file
+    file="$(_resolve "$usage_name")"
     if [[ -e "$file" ]] && command usage lint "$file" >/dev/null 2>&1; then
         _extract "$file"
     else
@@ -139,7 +165,8 @@ _about() {
 # directory; usage already validated them against the script's spec, and the
 # script parses them again itself. none of this parse's usage_* reach it
 _delegate() {
-    local name="$1" file="$COMMANDS/$1.sh"
+    local name="$1" file
+    file="$(_resolve "$1")"
     shift
     [[ -e "$file" ]] || {
         printf '%s: %s is gone, register it again or unregister it\n' \
