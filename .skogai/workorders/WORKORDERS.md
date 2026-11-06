@@ -14,7 +14,7 @@ These are hand-prepared workorders, not the [step 2 lifecycle](../../docs/plan.m
 
 - `open/*.md`: ready to hand out. Every file in this folder can run in parallel with the others.
 - `done/*.md`: finished. The lead moves a workorder here in the same change that lands its PR.
-- Next (`run-events` has landed): a `hello-reader` example that `depends_on` hello and reads its `greeting.txt`. This needs `depends_on` to work at run time and settles the path-base question below, so it waits until then. The staged runner (`src/core/run/usage.sh`) still isn't used for handing out workorders: agents edit the repo directly.
+- Waiting on skogix: the step 2 workorder from the plan (one module, one command, one owned output, enforced writable scope). The staged runner exists (`src/core/run/argc.sh`, F002), but the hand-out flow here does not use it yet: agents still edit the repo directly.
 
 ## A workorder
 
@@ -32,7 +32,7 @@ Keep each one finishable in a single session with a diff that someone can review
 Before handing anything out, check the queue. Every line must be `"verdict":"valid"`:
 
 ```bash
-mise exec -- argc --argc-run usage bash src/core/contract/usage.sh check .skogai/workorders/open/*.md
+mise exec -- argc --argc-run src/core/contract/argc.sh check .skogai/workorders/open/*.md
 ```
 
 Hand a workorder to an agent with this prompt, filling in `<name>`:

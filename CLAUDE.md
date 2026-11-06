@@ -13,8 +13,7 @@ Read @AGENTS.md (working principles) and `.harness/context_summary.md` (decision
 
 Tools come from `mise.toml` (argc, jq, yq, bats, all `latest`): `mise install`. Run checks through mise (`mise run test`, `mise exec -- bats ...`). The system `yq` may be a different program from mikefarah's yq, and then every contract test fails with `invalid-yaml`.
 
-- `mise run test`: the whole Bats suite against the usage implementations (`CONTRACT_IMPL=usage RUN_IMPL=usage bats tests`)
-- `mise run test:argc`: the frozen argc side (`tests/contract.bats`, `tests/run.bats` on `argc.sh`)
+- `mise run test`: the whole Bats suite (`bats tests`)
 - `bats tests/main.bats` or `bats tests/contract.bats`: one file
 - `bats -f '<regex>' tests/main.bats`: tests whose name matches
 - `mise run test:container`: the same suite in a clean Arch container via Podman (the repo is mounted read-only at `/repo`)
@@ -33,8 +32,6 @@ argc --argc-run "$ARGC_MAIN" --help
 The README demo uses `scripts/memory.sh`, which is not in this checkout. Use any small argc script instead.
 
 ## Architecture
-
-**usage is the interface going forward (skogix, 2026-11-06).** New work lands in the usage files (`main-usage.sh`, `contract/usage.sh`, `run/usage.sh`, `examples/usage/`, `tests/fixtures/run-usage/`). The argc files below stay as they are, frozen: they are not extended, and whether to remove them is undecided. The "goes into both" rules for the twins no longer apply to new features.
 
 Everything is Bash, and argc comment tags (`# @cmd`, `# @arg`, `# @meta`, `# @env`) form the interface: they provide parsing, help, completion and JSON export (`argc --argc-export`). Each script ends with `eval "$(argc --argc-eval "$0" "$@")"`, and argc sets `argc_*` variables before the function runs.
 
@@ -57,11 +54,7 @@ Everything is Bash, and argc comment tags (`# @cmd`, `# @arg`, `# @meta`, `# @en
 - `SKOGAI_COMMANDS` is a `:`-list of registry layers, nearest first (empty entries skipped, none at all is exit 2). Every lookup goes through `_resolve` (first layer with the name wins, gone links included), `_names` merges all layers, and `register`/`unregister` touch only the first layer. This replaces argc's "nearest Argcfile wins": a project puts its own layer in front, e.g. mise `[env] SKOGAI_COMMANDS = "{{config_root}}/.skogai/commands:{{env.HOME}}/.config/skogai/commands"`.
 - From a checkout, set `SKOGAI_MAIN="$PWD/src/core/main-usage.sh"` and point `SKOGAI_COMMANDS` at a temp dir; tests do both (`tests/main-usage.bats`).
 
-`mise run test` runs every suite with `CONTRACT_IMPL=usage RUN_IMPL=usage`; `mise run test:argc` runs `tests/contract.bats` and `tests/run.bats` against the frozen argc files.
-
-**Run events.** `run/usage.sh` appends one JSONL event per `check`/`exec`/`apply`/`end` step to `--log` (env `SKOGAI_LOG`, default `${XDG_STATE_HOME:-$HOME/.local/state}/skogai/run.jsonl`), in the skogai-core envelope `{ts, event, action?, input}` plus `id, run, module, revision, outcome`. See `docs/evidence.md`. Every test that calls the runner must isolate `XDG_STATE_HOME` and unset `SKOGAI_LOG`, or it writes to the real log.
-
-`tests/examples.bats` turns every `examples/usage/<name>/<name>.md` into a live test (check valid; run applied; second run unchanged). A new example is a new test.
+`mise run test:usage` runs `tests/contract.bats` and `tests/run.bats` against the twins (`CONTRACT_IMPL=usage RUN_IMPL=usage`) plus `tests/main-usage.bats`; `mise run test` stays on argc for the twinned files (and also runs `main-usage.bats`, which has no argc side).
 
 **Tests.** Each test sets `HOME` and every `ARGC_*` path under `$BATS_TEST_TMPDIR` and drives scripts through `argc --argc-run`. Contract fixtures follow a naming rule: each `tests/fixtures/contract/invalid/<reason>/` directory must produce exactly the reason `<reason>`. Each multi-file case directory under `valid/` (or `invalid/`) is checked as a single call, against its `expected.jsonl` where one exists. Add a new rule by adding a fixture directory named after its reason.
 
