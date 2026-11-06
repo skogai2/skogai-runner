@@ -27,7 +27,8 @@
 # shellcheck shell=bash disable=SC2154 # usage_* are exported by usage
 set -euo pipefail
 
-CONTRACT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../contract" && pwd)/usage.sh"
+# resolve the symlink first: registered with skogai, BASH_SOURCE is the registry link
+CONTRACT="$(cd "$(dirname "$(command realpath -- "${BASH_SOURCE[0]}")")/../contract" && pwd)/usage.sh"
 SKOGAI_IMAGE="$usage_image"
 declare -A WHY=()
 

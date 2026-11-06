@@ -279,3 +279,13 @@ layers() {
     SKOGAI_COMMANDS=":" run main ls
     [ "$status" -eq 2 ]
 }
+
+@test "run reached through the registry symlink still finds its contract checker" {
+    export XDG_STATE_HOME="$BATS_TEST_TMPDIR/state"
+    unset SKOGAI_LOG
+    run main register "$BATS_TEST_DIRNAME/../src/core/run/usage.sh" run
+    [ "$status" -eq 0 ]
+    run main run check "$BATS_TEST_DIRNAME/../examples/usage/hello/hello.md"
+    [ "$status" -eq 0 ]
+    [ "$(jq -r .verdict <<<"$output")" = valid ]
+}
