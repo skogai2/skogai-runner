@@ -1,5 +1,6 @@
 [tools]
 argc = "latest"
+usage = "latest"
 jq = "latest"
 yq = "latest"
 bats = "latest"
@@ -12,6 +13,10 @@ run = "command -v podman >/dev/null || { echo 'podman not on PATH: image not bui
 description = "bats tests on this machine"
 depends = ["image"]
 run = "bats tests"
+
+[tasks."test:usage"]
+description = "the contract tests against usage.sh, the usage twin of argc.sh"
+run = "CONTRACT_IMPL=usage bats tests/contract.bats"
 
 [tasks."test:container"]
 description = "bats tests in a clean arch container"

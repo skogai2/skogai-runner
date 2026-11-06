@@ -1,16 +1,27 @@
 #!/usr/bin/env bats
 # src/core/contract/argc.sh: relationship contracts, checked by example
+# CONTRACT_IMPL=usage runs the same tests against its usage twin, usage.sh
 
 bats_require_minimum_version 1.5.0
 
 setup() {
     export HOME="$BATS_TEST_TMPDIR/home"
     mkdir -p "$HOME"
-    CONTRACT="$BATS_TEST_DIRNAME/../src/core/contract/argc.sh"
     FIXTURES="$BATS_TEST_DIRNAME/fixtures/contract"
+    case "${CONTRACT_IMPL:-argc}" in
+    argc)
+        CONTRACT="$BATS_TEST_DIRNAME/../src/core/contract/argc.sh"
+        RUN=(argc --argc-run "$CONTRACT") RUNNER=argc
+        ;;
+    usage)
+        CONTRACT="$BATS_TEST_DIRNAME/../src/core/contract/usage.sh"
+        RUN=("$CONTRACT") RUNNER=usage
+        ;;
+    *) echo "unknown CONTRACT_IMPL: $CONTRACT_IMPL" >&2; return 1 ;;
+    esac
 }
 
-check() { argc --argc-run "$CONTRACT" check "$@"; }
+check() { "${RUN[@]}" check "$@"; }
 
 @test "each valid fixture is valid alone" {
     local f
@@ -100,14 +111,14 @@ check() { argc --argc-run "$CONTRACT" check "$@"; }
 @test "missing yq or jq is exit 1, checked before the arguments" {
     local bin="$BATS_TEST_TMPDIR/bin" tool
     mkdir -p "$bin"
-    for tool in argc bash env jq; do ln -s "$(command -v "$tool")" "$bin/$tool"; done
-    run --separate-stderr env PATH="$bin" argc --argc-run "$CONTRACT" check
+    for tool in "$RUNNER" bash env jq; do ln -s "$(command -v "$tool")" "$bin/$tool"; done
+    run --separate-stderr env PATH="$bin" "${RUN[@]}" check
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ "$stderr" == *yq* ]]
     rm "$bin/jq"
     ln -s "$(command -v yq)" "$bin/yq"
-    run --separate-stderr env PATH="$bin" argc --argc-run "$CONTRACT" check "$FIXTURES/valid/minimal.md"
+    run --separate-stderr env PATH="$bin" "${RUN[@]}" check "$FIXTURES/valid/minimal.md"
     [ "$status" -eq 1 ]
     [[ "$stderr" == *jq* ]]
 }
@@ -119,7 +130,7 @@ check() { argc --argc-run "$CONTRACT" check "$@"; }
     for version in 'yq 3.4.3' 'yq version 3.4.1'; do
         printf '#!/bin/sh\n[ "$1" = --version ] && { echo "%s"; exit 0; }\nexit 1\n' "$version" >"$bin/yq"
         chmod +x "$bin/yq"
-        run --separate-stderr env PATH="$bin:$PATH" argc --argc-run "$CONTRACT" check "$FIXTURES/valid/minimal.md"
+        run --separate-stderr env PATH="$bin:$PATH" "${RUN[@]}" check "$FIXTURES/valid/minimal.md"
         [ "$status" -eq 1 ] || { echo "$version: $status $output"; return 1; }
         [ -z "$output" ]
         [[ "$stderr" == *"yq"*"mikefarah"* ]]
