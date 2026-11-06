@@ -1,13 +1,28 @@
 #!/usr/bin/env bats
 # src/core/run/argc.sh: check and run one module, writable scope enforced by
 # a read-only podman mount and a staged output dir (F002)
+# RUN_IMPL=usage runs the same tests against its usage twin, run/usage.sh, with
+# the usage example and fixtures (examples/usage/, tests/fixtures/run-usage/)
 
 bats_require_minimum_version 1.5.0
 
 setup() {
     ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
-    RUN="$ROOT/src/core/run/argc.sh"
-    FIX="$ROOT/tests/fixtures/run"
+    case "${RUN_IMPL:-argc}" in
+    argc)
+        RUN="$ROOT/src/core/run/argc.sh"
+        RUNNER=(argc --argc-run "$RUN")
+        FIX="$ROOT/tests/fixtures/run"
+        EX="$ROOT/examples/hello"
+        ;;
+    usage)
+        RUN="$ROOT/src/core/run/usage.sh"
+        RUNNER=("$RUN")
+        FIX="$ROOT/tests/fixtures/run-usage"
+        EX="$ROOT/examples/usage/hello"
+        ;;
+    *) echo "unknown RUN_IMPL: $RUN_IMPL" >&2; return 1 ;;
+    esac
     # rootless podman keeps its images under the data dir; keep that, isolate the rest
     export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
     export HOME="$BATS_TEST_TMPDIR/home" XDG_CONFIG_HOME="$BATS_TEST_TMPDIR/home/.config"
@@ -29,8 +44,8 @@ needs_podman() {
     command -v podman >/dev/null || skip "podman not on PATH"
 }
 
-check() { run --separate-stderr argc --argc-run "$RUN" check "$@"; }
-runmod() { run --separate-stderr argc --argc-run "$RUN" run "$@"; }
+check() { run --separate-stderr "${RUNNER[@]}" check "$@"; }
+runmod() { run --separate-stderr "${RUNNER[@]}" run "$@"; }
 
 one_json_line() {
     [ "$(printf '%s\n' "$output" | wc -l)" -eq 1 ]
@@ -46,7 +61,7 @@ tool_path() {
     local bin="$BATS_TEST_TMPDIR/bin-$1" tool
     shift
     mkdir -p "$bin"
-    for tool in argc jq yq bash env cat mkdir mktemp rm mv cp cmp find sort ln readlink realpath dirname basename chmod stat; do
+    for tool in argc usage jq yq bash env cat mkdir mktemp rm mv cp cmp find sort ln readlink realpath dirname basename chmod stat; do
         local p
         p="$(command -v "$tool" 2>/dev/null)" && ln -sf "$p" "$bin/$tool"
     done
@@ -56,7 +71,7 @@ tool_path() {
 # --- check -------------------------------------------------------------------
 
 @test "check: the hello example is valid" {
-    m="$(copy "$ROOT/examples/hello")"
+    m="$(copy "$EX")"
     check "$m"
     [ "$status" -eq 0 ]
     one_json_line
@@ -87,7 +102,7 @@ tool_path() {
 }
 
 @test "check: depends_on makes the declaration invalid" {
-    m="$(copy "$ROOT/examples/hello")"
+    m="$(copy "$EX")"
     printf -- '---\nname: hello\ndepends_on: [other]\nowns: [greeting.txt]\n---\n' >"$m"
     check "$m"
     reasons_are '["invalid-declaration"]'
@@ -120,7 +135,7 @@ tool_path() {
 }
 
 @test "check: target-is-symlink, on the target and on a parent" {
-    m="$(copy "$ROOT/examples/hello")"
+    m="$(copy "$EX")"
     ln -s /etc/hostname "$W/hello/greeting.txt"
     check "$m"
     reasons_are '["target-is-symlink"]'
@@ -131,14 +146,14 @@ tool_path() {
 }
 
 @test "check: target-not-regular-file" {
-    m="$(copy "$ROOT/examples/hello")"
+    m="$(copy "$EX")"
     mkdir "$W/hello/greeting.txt"
     check "$m"
     reasons_are '["target-not-regular-file"]'
 }
 
 @test "check: dir-contains-home" {
-    m="$(copy "$ROOT/examples/hello")"
+    m="$(copy "$EX")"
     HOME="$W/hello" check "$m"
     reasons_are '["dir-contains-home"]'
     HOME="$W/hello/deeper" check "$m"
@@ -153,7 +168,7 @@ tool_path() {
 }
 
 @test "check: writes nothing and repeats byte-identically" {
-    m="$(copy "$ROOT/examples/hello")"
+    m="$(copy "$EX")"
     before="$(find "$W" -printf '%p %s %T@\n' | sort)"
     check "$m"; first="$output"
     [ "$status" -eq 0 ] && [ "$(field .verdict)" = '"valid"' ]
@@ -163,25 +178,25 @@ tool_path() {
 }
 
 @test "check and run: exit 2 on bad arguments, empty stdout" {
-    m="$(copy "$ROOT/examples/hello")"
+    m="$(copy "$EX")"
     for cmd in check run; do
-        run --separate-stderr argc --argc-run "$RUN" "$cmd"
+        run --separate-stderr "${RUNNER[@]}" "$cmd"
         [ "$status" -eq 2 ] && [ -z "$output" ]
-        run --separate-stderr argc --argc-run "$RUN" "$cmd" "$m" "$m"
+        run --separate-stderr "${RUNNER[@]}" "$cmd" "$m" "$m"
         [ "$status" -eq 2 ] && [ -z "$output" ]
-        run --separate-stderr argc --argc-run "$RUN" "$cmd" "$W/missing.md"
+        run --separate-stderr "${RUNNER[@]}" "$cmd" "$W/missing.md"
         [ "$status" -eq 2 ] && [ -z "$output" ] && [ -n "$stderr" ]
-        run --separate-stderr argc --argc-run "$RUN" "$cmd" "$W"
+        run --separate-stderr "${RUNNER[@]}" "$cmd" "$W"
         [ "$status" -eq 2 ] && [ -z "$output" ]
     done
 }
 
 @test "check and run: exit 2 on an unreadable module" {
     [ "$(id -u)" -ne 0 ] || skip "root reads everything"
-    m="$(copy "$ROOT/examples/hello")"
+    m="$(copy "$EX")"
     chmod 000 "$m"
     for cmd in check run; do
-        run --separate-stderr argc --argc-run "$RUN" "$cmd" "$m"
+        run --separate-stderr "${RUNNER[@]}" "$cmd" "$m"
         [ "$status" -eq 2 ] && [ -z "$output" ]
     done
 }
@@ -189,17 +204,16 @@ tool_path() {
 @test "check and run: exit 1 when jq is missing, before arguments" {
     bin="$(tool_path nojq)"
     rm "$bin/jq"
-    argc="$(command -v argc)"
     for cmd in check run; do
-        PATH="$bin" run --separate-stderr "$argc" --argc-run "$RUN" "$cmd"
+        PATH="$bin" run --separate-stderr "${RUNNER[@]}" "$cmd"
         [ "$status" -eq 1 ] && [ -z "$output" ] && [[ "$stderr" == *jq* ]]
     done
 }
 
 @test "check: does not need podman" {
-    m="$(copy "$ROOT/examples/hello")"
+    m="$(copy "$EX")"
     bin="$(tool_path nopodman)"
-    PATH="$bin" run --separate-stderr "$bin/argc" --argc-run "$RUN" check "$m"
+    PATH="$bin" run --separate-stderr "${RUNNER[@]}" check "$m"
     [ "$status" -eq 0 ]
     [ "$(field .verdict)" = '"valid"' ]
 }
@@ -213,7 +227,7 @@ tool_path() {
     : >"$log"
     printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$*" >>%q\n' "$log" >"$bin/podman"
     chmod +x "$bin/podman"
-    PATH="$bin" run --separate-stderr "$bin/argc" --argc-run "$RUN" run "$m"
+    PATH="$bin" run --separate-stderr "${RUNNER[@]}" run "$m"
     [ "$status" -eq 3 ]
     one_json_line
     [ "$(field .verdict)" = '"rejected"' ]
@@ -224,9 +238,9 @@ tool_path() {
 }
 
 @test "run: exit 1 without podman on PATH" {
-    m="$(copy "$ROOT/examples/hello")"
+    m="$(copy "$EX")"
     bin="$(tool_path nopodman)"
-    PATH="$bin" run --separate-stderr "$bin/argc" --argc-run "$RUN" run "$m"
+    PATH="$bin" run --separate-stderr "${RUNNER[@]}" run "$m"
     [ "$status" -eq 1 ] && [ -z "$output" ] && [[ "$stderr" == *podman* ]]
     [ ! -e "$W/hello/greeting.txt" ]
 }
@@ -235,7 +249,7 @@ tool_path() {
 
 @test "run: exit 1 when the image is missing" {
     needs_podman
-    m="$(copy "$ROOT/examples/hello")"
+    m="$(copy "$EX")"
     SKOGAI_IMAGE=skogai-no-such-image-f002 runmod "$m"
     [ "$status" -eq 1 ] && [ -z "$output" ]
     [[ "$stderr" == *skogai-no-such-image-f002* && "$stderr" == *"mise run image"* ]]
@@ -243,7 +257,7 @@ tool_path() {
 
 @test "run: hello is applied, then unchanged with mtime preserved" {
     needs_podman
-    m="$(copy "$ROOT/examples/hello")"
+    m="$(copy "$EX")"
     runmod "$m"
     [ "$status" -eq 0 ] || { echo "$stderr"; return 1; }
     one_json_line
@@ -260,7 +274,7 @@ tool_path() {
 
 @test "run: an existing target keeps its mode when replaced" {
     needs_podman
-    m="$(copy "$ROOT/examples/hello")"
+    m="$(copy "$EX")"
     printf old >"$W/hello/greeting.txt"
     chmod 0640 "$W/hello/greeting.txt"
     runmod "$m"
