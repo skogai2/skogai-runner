@@ -20,12 +20,15 @@ This file is referenced in CLAUDE.md and loaded every session.
 - `best-version-so-far/` contains active module plans and reusable implementation. Foundation work comes first; tasks may reuse it deliberately. `agents/` and `docs/argc*` also contain reference material. Earlier validation claims need rechecking (clarified 2026-10-29)
 
 - F001 is the relationship contract checker only (spec-gated 2026-10-30). Invalid input is a verdict (JSONL on stdout, exit 0); exit 2 bad args, exit 1 missing yq/jq. Old proposals (split main.sh, .skogai override, single binary) deferred per docs/plan.md (2026-10-30)
-- Open plan-step-1 items, not yet features: operation identity / retry / linked intent revisions; configuration ownership and precedence (mise vs git config vs env vs module defaults). Step 2 writable-scope enforcement decided by skogix (2026-11-06): Podman, staged output. The command runs in Podman with the repo mounted read-only (as `mise run test:container` does) plus one empty writable output dir; the runner then verifies the output dir holds only paths in `owns` and only then moves them into place atomically. Out-of-scope writes are impossible inside the container (ro mount) and out-of-scope outputs are rejected before any effect. Not implemented yet.
+- Open plan-step-1 items, not yet features: operation identity / retry / linked intent revisions; configuration ownership and precedence (mise vs git config vs env vs module defaults). Step 2 writable-scope enforcement decided by skogix (2026-11-06): Podman, staged output. The command runs in Podman with the repo mounted read-only (as `mise run test:container` does) plus one empty writable output dir; the runner then verifies the output dir holds only paths in `owns` and only then moves them into place atomically. Out-of-scope writes are impossible inside the container (ro mount) and out-of-scope outputs are rejected before any effect. Implemented as F002 (2026-11-06): src/core/run/argc.sh check|run, example examples/hello.
 
 ### Patterns
 - Tests isolate HOME under `$BATS_TEST_TMPDIR` and drive the template via `argc --argc-run`.
 
 ### Gotchas
+- Rootless podman finds its images through XDG_DATA_HOME (default $HOME/.local/share). Tests that isolate HOME must capture and export XDG_DATA_HOME first, or `podman image exists` fails. This host exports XDG_DATA_HOME already, which hides the problem.
+- Do not add `:Z` to podman mounts of module dirs: SELinux relabelling changes the host directory, which is an effect outside `owns`.
+- `mise run test` now depends on `mise run image` (cached `podman build`, a no-op without podman).
 - No coverage tooling for bash/bats yet: the 95% coverage gate cannot be measured. `full_test` runs `bats tests` only. Enabling coverage (e.g. bashcov/kcov) needs its own feature if wanted.
 - `ssh -T git@github.com` fails (no key loaded); remote is HTTPS under `skogai2`. The identity hook checks name/email only.
 
@@ -40,6 +43,11 @@ This file is referenced in CLAUDE.md and loaded every session.
 - Discovery lineage: n/a.
 - Approach patterns: harness ceremony (improve loop, spec gate) was explained at length before any feature existed; skogix asked for the simple path. Prefer acting on bookkeeping over describing it.
 - Plan approval: n/a.
+
+## Meta-Session 2026-11-06
+- Scope accuracy: F002 scope needed mise.toml after the spec gate (image task); spotted during spec answering, not during implementation.
+- Discovery: spec gate's 16 questions were mostly lead-answerable; the XDG_DATA_HOME issue was real and only visible by running podman with an isolated HOME.
+- Pattern: probe the real container invocation before writing the spec's exit/ownership rules; mutation-check enforcement tests when they pass first time.
 
 ## Meta-Session 2026-10-30
 - Scope accuracy: original F001-F004 drifted from the new foundation-first plan; replaced by one narrow F001.

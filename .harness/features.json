@@ -1,8 +1,8 @@
 {
   "project": "skogai-runner",
   "created": "2026-10-29T15:50:22Z",
-  "total_features": 1,
-  "passing": 1,
+  "total_features": 2,
+  "passing": 2,
   "features": [
     {
       "id": "F001",
@@ -31,6 +31,43 @@
         "verified_at": "2026-10-30T00:00:00Z",
         "source": "conversation"
       }
+    },
+    {
+      "id": "F002",
+      "priority": 2,
+      "status": "passing",
+      "description": "Staged run of one module with enforced writable scope (plan step 2). An argc script src/core/run/argc.sh with two commands, `check <module.md>` and `run <module.md>`, each taking exactly one argument. It finds the F001 checker at \"$(dirname \"$0\")/../contract/argc.sh\", resolved from the script's own location (src/core/contract/argc.sh in a checkout; packaging that path is out of scope).\nModule (names provisional): a Markdown+ file <dir>/<name>.md, plus its command: the sibling file <dir>/<name>.sh, where <name> is the frontmatter `name`. No new frontmatter keys. Paths in `owns` and `writes` are relative to <dir>, as in F001. The Markdown body is the module's prose intent and is not interpreted. F002 runs a single module with no dependencies: the F001 checker is run on the module file alone, so a non-empty `depends_on` yields F001's missing-dependency and therefore invalid-declaration. This is intended; dependency resolution is deferred.\nTool and argument order, shared by both commands: (1) argc, jq or yq missing, or yq not mikefarah v4 or newer (as in F001): exit 1, stderr diagnostic naming the tool, empty stdout; (2) bad arguments (argument count not exactly one, path missing, a directory, or unreadable): exit 2, stderr diagnostic, empty stdout. `check` never needs podman or the image.\n`check` (pure, no effects). If F001 reports any reason for the module, the only reason is `invalid-declaration`, F001's reasons are copied into \"f001\", and no further checks run. Otherwise all of the following are evaluated and collected: `missing-command` (sibling <name>.sh absent or not a regular file); `invalid-command` (only when the .sh is a regular file: `argc --argc-export <dir>/<name>.sh` exits non-zero); `no-owns` (owns empty or absent); `target-is-symlink` (an owns entry, or any existing path component between <dir> and it, is a symlink); `target-not-regular-file` (an owns entry exists and is neither a regular file nor a symlink, e.g. a directory); `target-dir-missing` (the parent directory of an owns entry does not exist; the runner creates no directories); `dir-contains-home` (the realpath of <dir> equals, or is an ancestor of, the realpath of $HOME). Output: exactly one compact JSON line on stdout with exactly these keys: {\"module\": <path as given>, \"name\": <string or null>, \"verdict\": \"valid\"|\"invalid\", \"reasons\": [sorted unique], \"f001\": [F001 reasons, [] when none], \"command\": \"<name>.sh\" or null, \"owns\": [normalised], \"writes\": [normalised], \"image\": <image>}. When F001 reports any reason: name is the frontmatter name if it is a string matching ^[a-z][a-z0-9-]*$ else null, command follows name, owns and writes are []. Exit 0 whenever this line is printed.\n`run` output: exactly one compact JSON line on stdout with exactly these keys: {\"module\", \"name\", \"verdict\": \"applied\"|\"unchanged\"|\"rejected\", \"reasons\": [sorted unique], \"f001\": [...], \"changed\": [paths relative to <dir>, C-locale sorted]}, where module, name and f001 are as in `check`.\n`run` steps, in order:\n1. Performs `check`. If invalid: verdict \"rejected\", reasons from check, changed [], exit 3; podman is never invoked, not even `podman image exists`.\n2. podman missing, or `podman image exists ${SKOGAI_IMAGE:-skogai-runner-dev}` fails (SKOGAI_IMAGE declared with # @env): exit 1, stderr diagnostic naming podman or the image (for the image, stating that `mise run image` builds it), empty stdout.\n3. Creates a fresh empty staging directory with mktemp -d under ${TMPDIR:-/tmp}.\n4. Runs `podman run --rm --network=none` on the image, mounting <dir> read-only at /work and the staging dir read-write at /out, with environment OUT=/out and working directory /work, executing `argc --argc-run /work/<name>.sh`. Nothing else from the host is mounted; the host HOME, ~/.config and anything outside <dir> are not visible. The command's stdout and stderr go to the runner's stderr. Container user mapping is the implementer's choice, provided the invoking user can read and delete everything in the staging dir afterwards.\n5. Collects: the command must exit 0, else `command-failed`. Every non-directory entry under /out must be a regular file (else `output-not-regular-file`) whose path relative to /out, lexically normalised as in F001, equals an owns entry (else `output-outside-owns`). Every writes entry must be present as a staged file (else `missing-output`). Directories in the staging dir are ignored. Any reason in this step: verdict \"rejected\", changed [], exit 3, and no target is touched.\n6. Applies each staged file in C-locale sorted order. Comparison is by content only: a target that exists with byte-identical content is left untouched (content, mode and mtime preserved), regardless of mode. Otherwise the content is written to a temporary file in the target's own directory and renamed over the target (atomic per file). An existing target keeps its permission mode; a new target gets the default creation mode (0666 masked by the umask). Multi-file application is not atomic as a whole: if a filesystem error occurs, the files already applied stay applied, the verdict is \"rejected\" with reason `apply-failed`, \"changed\" lists exactly the files applied before the failure, no further files are attempted, and the exit code is 3.\n7. Always removes the staging directory, on success, rejection or failure.\nVerdict \"applied\" when changed is non-empty, \"unchanged\" when every staged file already matched; both exit 0.\nIdempotence: running the same module twice with a deterministic command gives \"applied\" then \"unchanged\", and the second run modifies no file. Enforcement claim: a command that writes to /work, or to any absolute path other than /out, fails or has no effect on the host because of the read-only mount and the absence of other mounts; a command that stages a file outside owns is rejected before any target changes. Declarations alone enforce nothing.\nExample: examples/hello/hello.md (name hello, owns and writes greeting.txt, body states the intent) and examples/hello/hello.sh (a deterministic argc script writing a fixed line to $OUT/greeting.txt). examples/hello/greeting.txt is not committed (gitignored).\nmise: a new task `image` builds the image (`podman build -q -t skogai-runner-dev -f Containerfile .`) and exits 0 without building when podman is not on PATH; `test` depends on `image`; `test:container` uses `image` instead of its own build line.\nEvidence (QA binding): unit + integration in tests/run.bats using fixture modules under tests/fixtures/run/, each copied into $BATS_TEST_TMPDIR before use so the repo is never written. setup() first captures the host's data directory as ${XDG_DATA_HOME:-$HOME/.local/share} and exports it as XDG_DATA_HOME so rootless podman finds its image storage, then points HOME, XDG_CONFIG_HOME and TMPDIR under $BATS_TEST_TMPDIR. Tests needing podman skip with a stated reason only when podman is not on PATH (as inside `mise run test:container`); when podman is present and the image is missing, they fail. `check` tests, exit-2 tests and the stub-podman tests do not need real podman. Covered: each `check` reason by its own fixture (dir-contains-home by setting HOME to the copied module dir); valid check of examples/hello; the exit-1 tool case and exit-2 cases for both commands; run applied then unchanged with mtime preserved; command-failed; output-outside-owns with the target dir byte-identical before and after; output-not-regular-file via a staged symlink; missing-output; a command that tries to write /work/sneaky.txt leaves no sneaky.txt in the module dir; apply-failed with two owned files whose second target dir is made non-writable (chmod 0555) after check would pass, asserting changed lists only the first and the second target is unchanged (skipped when running as root); staging dirs removed after success and after rejection (TMPDIR contains no staging dirs); a rejected declaration invokes podman zero times, verified with a PATH stub podman that appends every invocation to a log which must stay empty; exit 1 for missing podman (stub-free PATH without podman, valid module) and for a missing image (SKOGAI_IMAGE set to a nonexistent name); stdout of every check and run is exactly one line and parses with jq -c.\nOut of scope: JSONL evidence (step 3), operation identity and retry beyond content-equality idempotence, timeouts, network access, mounting dependencies or reads, multi-module runs, removing targets the module no longer produces, registering modules with the main runner, packaging src/core/run.",
+      "scope": [
+        "src/core/run/",
+        "tests/run.bats",
+        "tests/fixtures/run/",
+        "examples/hello/",
+        ".gitignore",
+        "mise.toml"
+      ],
+      "depends_on": [
+        "F001"
+      ],
+      "assigned_to": null,
+      "test_file": "tests/run.bats",
+      "coverage": "n/a",
+      "notes": "implemented 2026-11-06: src/core/run/argc.sh, examples/hello, 29 tests in tests/run.bats over tests/fixtures/run (10 need podman and skip without it, e.g. in test:container); mise task `image`, `test` depends on it",
+      "correction_cycles": 0,
+      "scope_expansions": [],
+      "approaches_tried": [
+        "podman --userns=keep-id so staged files belong to the invoking user; no :Z on mounts (relabelling would modify the host dir)",
+        "mutation check: making /work rw or accepting unowned outputs fails the two enforcement tests"
+      ],
+      "failure_reason": null,
+      "discovered_via": null,
+      "spec": {
+        "hash": "05a456e6e197a399bb618d89589409656dcdd5a518cf53dcfd1fc8ad9a2bb8cb",
+        "verdict": "PASS",
+        "sv_version": "1.0",
+        "verified_at": "2026-11-06T00:00:00Z",
+        "source": "conversation"
+      },
+      "risk": "elevated"
     }
   ]
 }

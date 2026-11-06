@@ -4,13 +4,16 @@ jq = "latest"
 yq = "latest"
 bats = "latest"
 
+[tasks.image]
+description = "build the podman image modules run in (skipped without podman)"
+run = "command -v podman >/dev/null || { echo 'podman not on PATH: image not built' >&2; exit 0; }; podman build -q -t skogai-runner-dev -f Containerfile ."
+
 [tasks.test]
 description = "bats tests on this machine"
+depends = ["image"]
 run = "bats tests"
 
 [tasks."test:container"]
 description = "bats tests in a clean arch container"
-run = [
-  "podman build -q -t skogai-runner-dev -f Containerfile .",
-  "podman run --rm -v {{config_root}}:/repo:ro skogai-runner-dev bats /repo/tests",
-]
+depends = ["image"]
+run = "podman run --rm -v {{config_root}}:/repo:ro skogai-runner-dev bats /repo/tests"

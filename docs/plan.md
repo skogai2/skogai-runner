@@ -39,4 +39,4 @@ Continue the existing module, memory, type, runner, bootstrap, and installation 
 
 ## Current status
 
-The vision and instructions are documented. The registry runner and its Bats suite exist. The relationship contract checker (`src/core/contract/argc.sh`, step 1 relationships only) is implemented and tested. The workorder lifecycle, event log, and capability enforcement remain planned. The next implementation task is the local workorder in step 2.
+The vision and instructions are documented. The registry runner and its Bats suite exist. The relationship contract checker (`src/core/contract/argc.sh`, step 1 relationships only) is implemented and tested. Step 2's staged run is implemented and tested: `src/core/run/argc.sh` checks one module and runs its command in Podman with the module directory read-only and a staged output dir, applying only owned outputs (`examples/hello`, `tests/run.bats`). The enforcement is verified only where Podman is available. The full workorder lifecycle (prepared intent, context and acceptance as one document) and the event log remain planned. Next: step 3, evidence.

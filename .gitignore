@@ -6,3 +6,6 @@
 .harness/SESSION_INCOMPLETE
 .harness/features.json.lock
 .harness/last_gate.json
+
+# F002 example output
+examples/hello/greeting.txt

@@ -14,7 +14,7 @@ These are hand-prepared workorders, not the [step 2 lifecycle](../../docs/plan.m
 
 - `open/*.md`: ready to hand out. Every file in this folder can run in parallel with the others.
 - `done/*.md`: finished. The lead moves a workorder here in the same change that lands its PR.
-- Waiting on skogix: the step 2 workorder from the plan (one module, one command, one owned output, enforced writable scope). The enforcement mechanism is decided (Podman, staged output; see `.harness/context_summary.md`), but nothing implements it yet, so this workorder is still waiting on its spec.
+- Waiting on skogix: the step 2 workorder from the plan (one module, one command, one owned output, enforced writable scope). The staged runner exists (`src/core/run/argc.sh`, F002), but the hand-out flow here does not use it yet: agents still edit the repo directly.
 
 ## A workorder
 
@@ -48,4 +48,4 @@ These came up while writing this queue. They are recorded here, not settled.
 - **Path base.** The checker resolves `owns` relative to the declaring file's own directory, and rejects `..` and absolute paths. Workorders mean repo-root-relative paths. Conflict detection is still correct because every open workorder sits in the same folder. The `path-outside-scope` rule does not mark the repo boundary for these files.
 - **`depends_on` after completion.** A dependency that moves to `done/` drops out of a check over `open/` and shows up as `missing-dependency`. Checking `done/` as well would make finished workorders' `owns` conflict with new ones. Until this is decided, open workorders are independent and don't use `depends_on`.
 - **Directory overlap.** `ownership-conflict` compares normalized paths for equality and doesn't detect a parent directory and its child. Workorders own files only until the checker covers that case or it is decided that it shouldn't.
-- **Enforcement.** `owns` is declared, not enforced. Review is the only guard until step 2 implements the chosen mechanism (Podman, staged output).
+- **Enforcement.** `owns` is declared, not enforced. `src/core/run/argc.sh run` enforces it for a module's command, but not for agents working these workorders; review is the guard here.

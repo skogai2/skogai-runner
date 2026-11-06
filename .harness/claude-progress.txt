@@ -28,3 +28,6 @@
 - Orientation: clean tree, smoke + bats 35/36 (1 expected skip: empty open/ queue). CLI 2.1.312 -> 2.1.318, no requalification.
 - Decision (skogix): writable-scope enforcement = Podman, staged output (repo ro, one writable output dir, runner checks output against `owns` then moves atomically). Recorded in context_summary.md and WORKORDERS.md.
 - Next: write F002 spec for plan step 2 (one module, one command, one owned output, enforced scope) and send it to the spec gate.
+- F002 spec: gate ASK (16 questions, answered by lead), then PASS; stamped.
+- F002 implemented: src/core/run/argc.sh (check|run), examples/hello, tests/run.bats (29) + tests/fixtures/run, mise task `image`. bats tests: 65/65 (1 expected skip); test:container 65 with 10 podman skips + 1. Enforcement tests mutation-checked.
+- Next: plan step 3 (JSONL evidence). Open: the 16 gate answers were lead choices; skogix may revisit (notably `test` depending on `image`, content-only comparison, depends_on unrunnable).
