@@ -34,6 +34,22 @@ argc --argc-compgen generic "$ARGC_MAIN" argc memory ''
 
 Shell integration is a separate step. See the [upstream completion guide](https://github.com/sigoden/argc/blob/dd0bcb484d3217c7998b717fde02e38035e67a1e/docs/compgen.md) and verify behavior against the installed argc version.
 
+## The usage twin
+
+[src/core/main-usage.sh](../src/core/main-usage.sh) is the same registry runner built on usage instead of argc, invoked as `skogai`. It exists to compare the two; packaging still installs only `main.sh`.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `SKOGAI_COMMANDS` | `${XDG_CONFIG_HOME:-$HOME/.config}/skogai/commands` | `:`-separated registry layers of `<name>.sh` symlinks, nearest first |
+| `SKOGAI_MAIN` | `skogai` | The runner the mount calls back into |
+
+- There is no template, `sync`, or generated main. `register <file> <name>` checks the script with `usage lint` and links it into the first layer; `unregister` removes it from the first layer only.
+- The top-level `mount` runs `skogai _mount` whenever usage needs the command list, so a registration shows up immediately in help and completion.
+- The first layer that has a name wins, and `ls` merges all layers. A project can put its own layer first through mise `[env]`.
+- Names do not become shell functions, so only `register`, `unregister`, `ls` and `help` are reserved.
+
+Verified by [tests/main-usage.bats](../tests/main-usage.bats), which `mise run test` and `mise run test:usage` both run. The contract checker and the staged runner have usage twins too (`src/core/contract/usage.sh`, `src/core/run/usage.sh`), checked by the same `contract.bats` and `run.bats` under `mise run test:usage`.
+
 ## Completion for the usage twin
 
 [src/core/main-usage.sh](../src/core/main-usage.sh) (invoked as `skogai`) completes through usage itself. Usage's generated shell script is a shim: on each Tab it runs `usage complete-word` against the runner's spec. Registered commands reach that spec through the `mount`, which calls `skogai _mount` at completion time. Install the completion once; `register` and `unregister` never require a regeneration.
@@ -62,4 +78,4 @@ The current runner does not discover module manifests, resolve layered skogai co
 
 `skogai-bridge-caller.sh` preserves the earlier bridge demo. Its `call` command expects a separately running HTTP tool bridge, and its demonstration scripts are not a full MCP service. The [demo agent README](../agents/demo/README.md) describes an earlier integration whose referenced bridge configuration and generated files are absent from this checkout.
 
-The current test suite is [tests/main.bats](../tests/main.bats). It uses temporary home, registry, and working directories to check generation, registration, delegation, completion, and failure paths.
+The argc runner's test suite is [tests/main.bats](../tests/main.bats). It uses temporary home, registry, and working directories to check generation, registration, delegation, completion, and failure paths.

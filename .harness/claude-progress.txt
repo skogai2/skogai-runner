@@ -37,3 +37,8 @@
 - Queued and handed out 3 parallel workorders; merged PRs 6 (test-default-usage), 7 (examples-live), 8 (run-events) into claude/skogai-runner-modules-next-d7a63f.
 - Lead fix at merge: run.bats/examples.bats isolate XDG_STATE_HOME + unset SKOGAI_LOG (would otherwise write the real run log).
 - Next: hello-reader (depends_on at run time, path-base decision), step 3 leftovers.
+## Session 5 - usage twins recorded (2026-11-06)
+- Added usage twins of all three argc pieces for an argc vs usage + mise comparison: contract/usage.sh (921b91c), run/usage.sh + examples/usage/hello + tests/fixtures/run-usage (80688bf), main-usage.sh (d00a5da), layered SKOGAI_COMMANDS registry (2b87210). Completion for skogai documented in docs/runner.md (7edeef9, manual check only).
+- Checks: mise run test:usage 67/67; mise run test 91/91 (1 expected skip: empty open/ queue). Contract VERDICTS jq program is identical in both checkers.
+- Not features.json entries (no spec gate). PKGBUILD still packages only main.sh.
+- Next: plan step 3 (JSONL evidence) is unchanged. Open for skogix: comparison criteria and the argc-or-usage decision; until then every twinned change is made twice.
