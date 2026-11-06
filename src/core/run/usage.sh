@@ -233,6 +233,14 @@ _open_log() {
         printf 'cannot append to log: %s\n' "$LOG" >&2
         return 1
     fi
+    # a torn last line (no newline) is ended, never rewritten: it stays one bad line
+    if [[ -s "$LOG" && "$(command tail -c 1 -- "$LOG" | command wc -l)" -eq 0 ]]; then
+        if ! printf '\n' >>"$LOG" 2>/dev/null; then
+            printf 'cannot append to log: %s\n' "$LOG" >&2
+            return 1
+        fi
+        printf 'log had a partial last line, ended it: %s\n' "$LOG" >&2
+    fi
     _uuid RUN
     FILE="$(basename "$MODULE")"
 }
