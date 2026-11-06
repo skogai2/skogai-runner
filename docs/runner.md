@@ -34,6 +34,28 @@ argc --argc-compgen generic "$ARGC_MAIN" argc memory ''
 
 Shell integration is a separate step. See the [upstream completion guide](https://github.com/sigoden/argc/blob/dd0bcb484d3217c7998b717fde02e38035e67a1e/docs/compgen.md) and verify behavior against the installed argc version.
 
+## Completion for the usage twin
+
+[src/core/main-usage.sh](../src/core/main-usage.sh) (invoked as `skogai`) completes through usage itself. Usage's generated shell script is a shim: on each Tab it runs `usage complete-word` against the runner's spec. Registered commands reach that spec through the `mount`, which calls `skogai _mount` at completion time. Install the completion once; `register` and `unregister` never require a regeneration.
+
+```bash
+usage generate completion fish skogai -f "$(readlink -f "$(command -v skogai)")" --install
+```
+
+Replace `fish` with `bash`, `zsh`, `nu`, or `powershell` as needed. `--install` writes only the completion file. For zsh, add the `fpath+=` line that it prints to your shell configuration yourself.
+
+- Pass `-f` with the real path of `main-usage.sh`, because the script does not print its own spec. If the checkout moves, generate the completion again.
+- Do not pass `--cache-key`, because a cached spec would freeze the registry list.
+- The mount runs `${SKOGAI_MAIN:-skogai}` and reads `SKOGAI_COMMANDS` from the shell's environment. A project layer exported by mise `[env]` therefore appears when you complete inside that project.
+
+To inspect candidates without installing anything:
+
+```bash
+usage complete-word --shell fish -f "$(readlink -f "$(command -v skogai)")" -- skogai ''
+```
+
+Verified manually with usage 7.0.2 on 2026-11-06. `skogai ''` listed the registered `hello` next to `ls`, `register`, and `unregister`, and `skogai hello --` offered `--out` from hello's own spec. No automated test covers completion, and `--install` was not run as part of this check.
+
 ## Boundaries
 
 The current runner does not discover module manifests, resolve layered skogai configuration, or build a native executable. Those concepts remain active plans, with reusable implementation work under `best-version-so-far/`. The foundation comes first; see [the plan](plan.md). `argc --argc-build` produces a standalone Bash script; it does not turn delegated scripts or their external tools into a self-contained binary.
