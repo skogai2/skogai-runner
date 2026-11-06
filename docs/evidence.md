@@ -72,6 +72,10 @@ A declaration rejected at check time writes `check` and `end` and nothing else.
 
 A declaration rejected at check time (the `badmeta` fixture) is only `check` (outcome `rejected`, `f001: ["unknown-key"]`) followed by `end`.
 
+## Partial last line
+
+Implemented and verified (`tests/run-events.bats`, workorder log-partial-line). An interrupted write can leave the log's last line without its newline. Before anything else, `_open_log` checks the last byte of a non-empty log. When it is not `\n`, the runner appends one `\n` and prints `log had a partial last line, ended it: <file>` on stderr. The fragment stays as it is (the log is append-only, nothing is rewritten or truncated), so a torn line is one bad line and the next events parse. If that append fails: exit 1, `cannot append to log: <file>`, empty stdout, no effect. An empty, missing or newline-terminated log is untouched, and repeating a run on a repaired log adds no second newline.
+
 ## Decisions taken here, not by the workorder
 
 - Field order: the skogai-core envelope comes first (`ts, event, action?, input`), then `id, run, module, revision, outcome`.
@@ -84,7 +88,7 @@ A declaration rejected at check time (the `badmeta` fixture) is only `check` (ou
 
 ## Open (planned, not built)
 
-- **Append failure after an effect.** When an `apply` or `end` append fails after a file was already moved into place, the runner stops with exit 1. The effect stays, and the log lacks its record. Recovering from this, or from an interrupted write that leaves a partial last line, is not handled.
+- **Append failure after an effect.** When an `apply` or `end` append fails after a file was already moved into place, the runner stops with exit 1. The effect stays, and the log lacks its record. Recovering from this is not handled. (The partial-last-line half is implemented, see "Partial last line".)
 - **Rotation and size.** The log only grows.
 - **Concurrency.** Each event is one `printf` to an `O_APPEND` file, which in practice keeps lines from interleaving on a local filesystem for lines this short. Nothing locks the file, and nobody has tested concurrent runs.
 - **Reader or summary command.** There is none yet. `jq 'select(.run == "<id>")' run.jsonl` is the reader.

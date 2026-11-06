@@ -213,6 +213,42 @@ no_absolute_paths() {
     [ "$(events 'select(.event == "end") | [.outcome, .action]')" = '["rejected","applied a.txt"]' ]
 }
 
+@test "events: a torn last line is ended, kept as is, and named on stderr" {
+    m="$(copy "$EX")"
+    mkdir -p "$(dirname "$SKOGAI_LOG")"
+    printf '{"ts":"2026' >"$SKOGAI_LOG"
+    runner check "$m"
+    [ "$status" -eq 0 ]
+    [[ "$stderr" == *"log had a partial last line, ended it: $SKOGAI_LOG"* ]]
+    [ "$(head -n 1 "$SKOGAI_LOG")" = '{"ts":"2026' ]
+    [ "$(wc -l <"$SKOGAI_LOG")" -eq 3 ]
+    tail -n +2 "$SKOGAI_LOG" | jq -e . >/dev/null
+    [ "$(tail -n +2 "$SKOGAI_LOG" | jq -r .event | paste -sd' ')" = "check end" ]
+}
+
+@test "events: a repaired log gets no second newline" {
+    m="$(copy "$EX")"
+    mkdir -p "$(dirname "$SKOGAI_LOG")"
+    printf '{"ts":"2026' >"$SKOGAI_LOG"
+    runner check "$m"
+    runner check "$m"
+    [ "$status" -eq 0 ]
+    [[ "$stderr" != *"partial last line"* ]]
+    [ "$(grep -c '^$' "$SKOGAI_LOG" || true)" -eq 0 ]
+    [ "$(wc -l <"$SKOGAI_LOG")" -eq 5 ]
+}
+
+@test "events: a log ending in a newline is untouched and silent" {
+    m="$(copy "$EX")"
+    mkdir -p "$(dirname "$SKOGAI_LOG")"
+    printf '{"old":1}\n' >"$SKOGAI_LOG"
+    runner check "$m"
+    [ "$status" -eq 0 ]
+    [[ "$stderr" != *"partial last line"* ]]
+    [ "$(head -n 1 "$SKOGAI_LOG")" = '{"old":1}' ]
+    [ "$(wc -l <"$SKOGAI_LOG")" -eq 3 ]
+}
+
 @test "events: a missing image ends the run as failed with the message" {
     needs_podman
     m="$(copy "$EX")"
