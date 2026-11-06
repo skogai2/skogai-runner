@@ -31,3 +31,9 @@
 - F002 spec: gate ASK (16 questions, answered by lead), then PASS; stamped.
 - F002 implemented: src/core/run/argc.sh (check|run), examples/hello, tests/run.bats (29) + tests/fixtures/run, mise task `image`. bats tests: 65/65 (1 expected skip); test:container 65 with 10 podman skips + 1. Enforcement tests mutation-checked.
 - Next: plan step 3 (JSONL evidence). Open: the 16 gate answers were lead choices; skogix may revisit (notably `test` depending on `image`, content-only comparison, depends_on unrunnable).
+
+## Session 5 - usage chosen, step 3 started (2026-11-06)
+- Decision (skogix): usage + mise is the interface; argc files frozen, not removed.
+- Queued and handed out 3 parallel workorders; merged PRs 6 (test-default-usage), 7 (examples-live), 8 (run-events) into claude/skogai-runner-modules-next-d7a63f.
+- Lead fix at merge: run.bats/examples.bats isolate XDG_STATE_HOME + unset SKOGAI_LOG (would otherwise write the real run log).
+- Next: hello-reader (depends_on at run time, path-base decision), step 3 leftovers.
