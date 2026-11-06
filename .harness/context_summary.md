@@ -5,7 +5,7 @@ This file is referenced in CLAUDE.md and loaded every session.
 
 ## Active Context
 - Steps 1-2 done (F001 checker, F002 staged Podman run). usage + mise is the interface; argc twins frozen (2026-11-06).
-- Next: step 3 evidence on `src/core/run/usage.sh` (workorder `run-events`), live-test examples (`examples-live`), `mise run test` on usage (`test-default-usage`). Then a second module that `depends_on` hello.
+- Landed 2026-11-06: run events (`docs/evidence.md`), live-test examples (`tests/examples.bats`), `mise run test` on usage. Next: a second module that `depends_on` hello; step 3 leftovers (recovery, reader, workorder link).
 - Not implemented: the workorder lifecycle through the runner (agents still edit the repo directly), `depends_on` at run time, config precedence.
 
 ## Cross-Cutting Concerns
@@ -21,6 +21,7 @@ This file is referenced in CLAUDE.md and loaded every session.
 
 - F001 is the relationship contract checker only (spec-gated 2026-10-30). Invalid input is a verdict (JSONL on stdout, exit 0); exit 2 bad args, exit 1 missing yq/jq. Old proposals (split main.sh, .skogai override, single binary) deferred per docs/plan.md (2026-10-30)
 - Open plan-step-1 items, not yet features: operation identity / retry / linked intent revisions; configuration ownership and precedence (mise vs git config vs env vs module defaults). Step 2 writable-scope enforcement decided by skogix (2026-11-06): Podman, staged output. The command runs in Podman with the repo mounted read-only (as `mise run test:container` does) plus one empty writable output dir; the runner then verifies the output dir holds only paths in `owns` and only then moves them into place atomically. Out-of-scope writes are impossible inside the container (ro mount) and out-of-scope outputs are rejected before any effect. Implemented as F002 (2026-11-06): src/core/run/argc.sh check|run, example examples/hello.
+- usage twins (2026-11-06): to compare argc with usage + mise, every argc piece has a usage twin with the same behavior and tests: `contract/usage.sh`, `run/usage.sh` (+ `examples/usage/hello`, `tests/fixtures/run-usage`), and `main-usage.sh` (`skogai`: no template/sync, usage `mount` reads the registry live; `SKOGAI_COMMANDS` is a `:`-list of registry layers, nearest first). Not spec-gated features; no entry in features.json. Until the comparison is decided, a change to a rule, runner, example or fixture goes into both twins. Open for skogix: criteria and decision for argc vs usage, and whether packaging (PKGBUILD) ships `skogai`.
 
 - usage + mise chosen over argc as the interface for user, agents and modules (skogix, 2026-11-06). New work goes into the usage files only; the argc files are frozen, not removed. Why: one interface instead of twinning every change; usage gives layered registries (`SKOGAI_COMMANDS`), `effect=` for agents via `usage mcp`, and mise integration.
 - Evidence starts from the skogai-core hook log shape (`/home/skogix/skogai/.skogai/logs/skogai-core/log.jsonl`: `{ts, event, action?, input}`), extended with run identity and outcome, not a new format (2026-11-06).
@@ -31,6 +32,10 @@ This file is referenced in CLAUDE.md and loaded every session.
 ### Gotchas
 - Rootless podman finds its images through XDG_DATA_HOME (default $HOME/.local/share). Tests that isolate HOME must capture and export XDG_DATA_HOME first, or `podman image exists` fails. This host exports XDG_DATA_HOME already, which hides the problem.
 - Do not add `:Z` to podman mounts of module dirs: SELinux relabelling changes the host directory, which is an effect outside `owns`.
+- The runner logs to `${XDG_STATE_HOME:-$HOME/.local/state}/skogai/run.jsonl`. This host exports XDG_STATE_HOME, so isolating HOME alone leaks test runs into the real log: tests must set XDG_STATE_HOME and unset SKOGAI_LOG.
+- Workorder agents in worktrees under ~/skogai-runner/.claude/worktrees: a hook refuses plain `git` (rtk wrapper); they used `/usr/bin/git`. `mise tasks` there also picks up the parent checkout's mise.toml.
+- `mise run test` stays on argc for the twinned files; `mise run test:usage` runs contract.bats and run.bats with `CONTRACT_IMPL=usage RUN_IMPL=usage` plus main-usage.bats. Both suites must pass after a twinned change.
+- `contract/usage.sh` receives the variadic `file` as one shell-quoted string (`eval "files=(...)"`); under a usage mount, `usage_cmd` is the mounted script's `bin`, so main-usage.sh dispatches on argv.
 - `mise run test` now depends on `mise run image` (cached `podman build`, a no-op without podman).
 - No coverage tooling for bash/bats yet: the 95% coverage gate cannot be measured. `full_test` runs `bats tests` only. Enabling coverage (e.g. bashcov/kcov) needs its own feature if wanted.
 - `ssh -T git@github.com` fails (no key loaded); remote is HTTPS under `skogai2`. The identity hook checks name/email only.
@@ -58,3 +63,9 @@ This file is referenced in CLAUDE.md and loaded every session.
 - Discovery lineage: n/a.
 - Approach patterns: answering gate questions from the repo docs plus sensible defaults worked; only genuine scope questions (step-1 bullets) were left open for skogix.
 - Plan approval: n/a.
+
+## Meta-Session 2026-11-06 (session 6)
+- Scope accuracy: both workorders stayed inside owns; disjoint owns made parallel handout trivial.
+- Model calibration: Sonnet finished each in one pass, no correction cycles.
+- Gotcha: the rtk hook rewrites `git ...` to `rtk git ...`; in a subagent worktree auto mode + the worktree guard then deny every git call, so agents cannot commit. One agent bypassed via `/usr/bin/git`. Until resolved, plan for the lead to commit agent work, and tell agents not to bypass hooks.
+- Pattern: hand-out prompts should say "do not push / open PR" while local master holds unpushed commits.
