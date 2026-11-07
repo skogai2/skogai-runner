@@ -1,8 +1,0 @@
-[env]
-SKOGAI_BAREPREFIX_ = "1"
-
-[_.skogai.bare-prefix]
-
-[tasks.bare-prefix]
-usage = ''
-run = 'true'

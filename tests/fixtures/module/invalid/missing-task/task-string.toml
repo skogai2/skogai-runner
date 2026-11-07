@@ -1,4 +1,0 @@
-[tasks]
-task-string = "echo"
-
-[_.skogai.task-string]

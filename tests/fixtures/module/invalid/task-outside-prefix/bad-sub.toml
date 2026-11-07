@@ -1,9 +1,0 @@
-[_.skogai.bad-sub]
-
-[tasks.bad-sub]
-usage = ''
-run = 'true'
-
-[tasks."bad-sub:Sub"]
-usage = ''
-run = 'true'

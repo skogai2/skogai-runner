@@ -1,6 +1,0 @@
-[_.skogai.a]
-owns = ["shared.txt"]
-
-[tasks.a]
-usage = ''
-run = 'true'

@@ -1,3 +1,0 @@
-{"file":"a.toml","verdict":"invalid","reasons":["ownership-conflict"]}
-{"file":"b.toml","verdict":"invalid","reasons":["ownership-conflict"]}
-{"file":"c.toml","verdict":"valid","reasons":[]}

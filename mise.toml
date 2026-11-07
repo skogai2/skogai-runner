@@ -10,16 +10,11 @@ description = "build the podman image modules run in (skipped without podman)"
 run = "command -v podman >/dev/null || { echo 'podman not on PATH: image not built' >&2; exit 0; }; podman build -q -t skogai-runner-dev -f Containerfile ."
 
 [tasks.test]
-description = "bats tests on this machine, against the usage implementations (the default)"
+description = "bats tests on this machine"
 depends = ["image"]
-run = "CONTRACT_IMPL=usage RUN_IMPL=usage bats tests"
-
-[tasks."test:argc"]
-description = "the frozen argc side: contract and run tests against the argc implementations"
-depends = ["image"]
-run = "bats tests/contract.bats tests/run.bats"
+run = "bats tests"
 
 [tasks."test:container"]
-description = "bats tests in a clean arch container, against the usage implementations"
+description = "bats tests in a clean arch container"
 depends = ["image"]
-run = "podman run --rm -e CONTRACT_IMPL=usage -e RUN_IMPL=usage -v {{config_root}}:/repo:ro skogai-runner-dev bats /repo/tests"
+run = "podman run --rm -v {{config_root}}:/repo:ro skogai-runner-dev bats /repo/tests"

@@ -1,9 +1,0 @@
-[env]
-_ = { path = ["bin"] }
-SKOGAI_DIRECTIVE_X = "1"
-
-[_.skogai.directive]
-
-[tasks.directive]
-usage = ''
-run = 'true'

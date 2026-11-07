@@ -1,2 +1,0 @@
-{"file":"a.toml","verdict":"valid","reasons":[]}
-{"file":"b.toml","verdict":"invalid","reasons":["multiple-declarations"]}

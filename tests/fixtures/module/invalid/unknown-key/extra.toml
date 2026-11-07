@@ -1,6 +1,0 @@
-[_.skogai.extra]
-colour = "red"
-
-[tasks.extra]
-usage = ''
-run = 'true'

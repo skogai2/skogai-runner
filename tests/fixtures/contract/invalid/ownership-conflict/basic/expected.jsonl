@@ -1,3 +1,0 @@
-{"file":"a.md","verdict":"invalid","reasons":["ownership-conflict"]}
-{"file":"b.md","verdict":"invalid","reasons":["ownership-conflict"]}
-{"file":"c.md","verdict":"valid","reasons":[]}

@@ -1,8 +1,0 @@
-[env]
-SKOGAI_ONE_X = "1"
-
-[_.skogai.one]
-
-[tasks.one]
-usage = ''
-run = 'true'

@@ -1,7 +1,0 @@
-env = "x"
-
-[_.skogai.env-string]
-
-[tasks.env-string]
-usage = ''
-run = 'true'
