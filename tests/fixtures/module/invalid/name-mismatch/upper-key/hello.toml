@@ -1,0 +1,8 @@
+[env]
+SKOGAI_HELLO_X = "1"
+
+[_.skogai.Hello]
+
+[tasks.Hello]
+usage = ''
+run = 'true'

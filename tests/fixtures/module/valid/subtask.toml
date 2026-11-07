@@ -1,0 +1,9 @@
+[_.skogai.subtask]
+
+[tasks.subtask]
+usage = ''
+run = 'true'
+
+[tasks."subtask:list"]
+usage = ''
+run = 'true'

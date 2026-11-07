@@ -1,0 +1,8 @@
+[tools]
+jq = "latest"
+
+[_.skogai.tools]
+
+[tasks.tools]
+usage = ''
+run = 'true'

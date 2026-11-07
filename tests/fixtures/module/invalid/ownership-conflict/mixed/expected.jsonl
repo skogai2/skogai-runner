@@ -1,0 +1,2 @@
+{"file":"order.md","verdict":"invalid","reasons":["ownership-conflict"]}
+{"file":"thing.toml","verdict":"invalid","reasons":["ownership-conflict"]}

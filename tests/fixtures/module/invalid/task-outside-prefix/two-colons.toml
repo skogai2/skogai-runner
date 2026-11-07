@@ -1,0 +1,9 @@
+[_.skogai.two-colons]
+
+[tasks.two-colons]
+usage = ''
+run = 'true'
+
+[tasks."two-colons:a:b"]
+usage = ''
+run = 'true'

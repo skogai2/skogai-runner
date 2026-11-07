@@ -1,0 +1,2 @@
+{"file":"one.toml","verdict":"invalid","reasons":["duplicate-name"]}
+{"file":"two.toml","verdict":"invalid","reasons":["duplicate-name","name-mismatch"]}

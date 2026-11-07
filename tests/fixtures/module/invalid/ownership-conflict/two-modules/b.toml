@@ -1,0 +1,6 @@
+[_.skogai.b]
+owns = ["./shared.txt"]
+
+[tasks.b]
+usage = ''
+run = 'true'

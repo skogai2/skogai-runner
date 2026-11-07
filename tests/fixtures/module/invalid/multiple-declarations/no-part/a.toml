@@ -1,0 +1,6 @@
+[_.skogai.a]
+owns = ["x.txt"]
+
+[tasks.a]
+usage = ''
+run = 'true'
