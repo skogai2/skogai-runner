@@ -1,5 +1,0 @@
-[_.skogai.other-only]
-
-[tasks."other-only:x"]
-usage = ''
-run = 'true'

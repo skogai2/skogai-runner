@@ -1,8 +1,0 @@
-[_.other]
-a = 1
-
-[_.skogai.under-underscore]
-
-[tasks.under-underscore]
-usage = ''
-run = 'true'

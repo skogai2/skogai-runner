@@ -1,5 +1,0 @@
-[_.skogai.run-mixed-array]
-
-[tasks.run-mixed-array]
-usage = ''
-run = ['true', 3]

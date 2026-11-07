@@ -1,9 +1,0 @@
-[env]
-SKOGAI_BAD_KEY = "1"
-
-[_.skogai.Bad]
-description = "fixture Bad"
-
-[tasks.Bad]
-usage = 'arg "<who>"'
-run = 'echo hi'

@@ -1,6 +1,0 @@
-[_.skogai.lonely]
-depends_on = ["nobody"]
-
-[tasks.lonely]
-usage = ''
-run = 'true'

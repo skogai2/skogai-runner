@@ -1,6 +1,0 @@
-[_.skogai.defaults-key]
-defaults = { a = 1 }
-
-[tasks.defaults-key]
-usage = ''
-run = 'true'

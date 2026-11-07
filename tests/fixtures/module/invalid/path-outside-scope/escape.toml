@@ -1,6 +1,0 @@
-[_.skogai.escape]
-reads = ["../secret"]
-
-[tasks.escape]
-usage = ''
-run = 'true'

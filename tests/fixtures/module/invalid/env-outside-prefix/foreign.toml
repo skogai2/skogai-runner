@@ -1,8 +1,0 @@
-[env]
-FOO = "1"
-
-[_.skogai.foreign]
-
-[tasks.foreign]
-usage = ''
-run = 'true'

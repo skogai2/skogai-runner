@@ -13,3 +13,4 @@ examples/usage/hello/greeting.txt
 /.claude/worktrees
 /.skogai/logs/skogai-core/log.jsonl
 /graft/.cache
+/.skogai/logs/skogai-core/log.jsonl

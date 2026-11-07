@@ -1,6 +1,0 @@
-[_.skogai.writer]
-writes = ["out.txt"]
-
-[tasks.writer]
-usage = ''
-run = 'true'

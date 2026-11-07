@@ -910,3 +910,70 @@ Should I go ahead with F, or do you want a different order?
 - Bash: `rtk git add .harness/context_summary.md`
 - Bash: `rtk git commit -q -m "docs: harness retrospective for 2026-11-07 (F003-F005)`
 
+## 2026-11-07 14:09 · turn a51c84ce
+
+**User**
+
+> /vv-harness:harness-orchestrate "we need to pretty much remake every module from the ground up. focus on getting config correct to start"
+
+**Assistant**
+
+skogix, the deletion is done on branch `remake/config` (not merged, not pushed). The mise research agent is still running in the background.
+
+**Removed in `75beb96`** (198 files, about 5,400 lines):
+- all of `src/core/config`, `module`, `run`, `contract` (usage and argc), plus `main.sh` and `main-usage.sh`
+- their tests and fixtures
+- all three `examples/`
+- `docs/config.md`, `install.md`, `module.md`, `evidence.md`, `runner.md`
+- `tests/workorders.bats`, because it only exercised the contract checker
+- the `test:argc` task in mise
+
+Everything removed is still in git at `2913d23`.
+
+**Kept:** `src/core/log/` and its test, because they work on their own. `mise run test` passes on what remains (13 tests) and smoke is clean.
+
+**Bookkeeping:**
+- F001–F005 are marked `blocked` with the reason "superseded by the remake", in a separate `docs:` commit.
+- Your config answers are in `.harness/context_summary.md` (`d9fff5a`): storage, key model and building from definitions were the flaws; keys must be declared, and a module uses only its own; `config.*` is reserved; modules call each other.
+
+**Now stale (I haven't edited these; tell me if you want me to):**
+- `CLAUDE.md`'s Architecture and Commands sections still describe the deleted files. That will mislead any new session started on this branch.
+- `packaging/arch/PKGBUILD` installs `src/core/main.sh`, so a package build of this branch would fail. You didn't pick packaging for deletion, so I left it alone.
+- `README.md` and `AGENTS.md` mention `main.sh`.
+
+**Still open:**
+- **Storage model.** I'm waiting on `.skogai/research/mise.md`. It maps every place mise stores and resolves data (`[vars]`, `[settings]`, `[_]`, `mise config get/set`, tera context, file precedence, task-to-task calls), with each claim probed in an isolated scratch dir and marked VERIFIED, DOCUMENTED or UNKNOWN.
+- **Next step.** When the research is in, I'll bring you a storage proposal grounded in it. Once you've decided, I'll write the new config feature spec, run it through the spec gate, and only then give it to a herdr worker.
+
+No workers have been launched, because there is no verified feature to hand out yet.
+
+**Actions**
+
+- Read `docs/config.md`
+- Read `src/core/config/usage.sh`
+- Bash: `rtk read /skogai/claude/plugins/cache/vv-harness-marketplace/vv-harness/6.3.2/skills/harness-orchestrate/references/harn…`
+- Bash: `rtk git show --stat 1198f58 eb5cbab bcd20b3 | head -60`
+- Read `TODO.md`
+- AskUserQuestion
+- Bash: `rtk find . -path ./.git -prune -o \( -name 'skogai-config*' -o -name 'CONFIG.md' -o -path '*config*' \) -print 2>/dev/nu…`
+- Bash: `cd .skogai/tmp/skogai/man/man1 && for f in skogai-config.1 skogai-config-get.1 skogai-config-set.1 skogai-config-env.1 s…`
+- AskUserQuestion
+- Bash: `cd /home/skogix/skogai-runner && rtk git switch -c remake/config && rtk git check-ignore -v .skogai/tmp/x .skogai/resear…`
+- Agent: Deep research on mise for config
+- Bash: `rtk git ls-files src tests examples packaging Containerfile .harness/init.sh | cat; grep -rln "src/core" --include=*.sh …`
+- Bash: `cd /home/skogix/skogai-runner; rtk read tests/workorders.bats; rtk grep -n "src/core\|fixtures" tests/log.bats | head; r…`
+- Bash: `cd /home/skogix/skogai-runner; head -5 docs/declarations.md docs/runner.md docs/markdown-plus.md; rtk jq '.properties.fe…`
+- Bash: `rtk git rm -rq src/core/config src/core/module src/core/run src/core/contract src/core/main.sh src/core/main-usage.sh te…`
+- Bash: `python3 - <<'EOF'`
+- Bash: `python3 - <<'EOF'`
+- Bash: `rtk git diff --stat -- .harness/features.json mise.toml`
+- Bash: `rtk git add mise.toml`
+- Bash: `rtk git commit -q -m "remove config, module install, run, contract and main for a ground-up remake`
+- Bash: `rtk git add .harness/features.json`
+- Bash: `rtk git commit -q -m "docs: harness: F001-F005 blocked as superseded by the remake`
+- Bash: `rtk git log --oneline -6; rtk git show --stat 8f497bb | head -12; rtk git branch --contains 2913d23`
+- Read `.harness/context_summary.md`
+- Edit `.harness/context_summary.md`
+- Bash: `rtk git add .harness/context_summary.md`
+- Bash: `rtk git commit -q -m "docs: harness: record remake decisions for config`
+
