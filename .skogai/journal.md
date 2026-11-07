@@ -149,3 +149,56 @@ The next step I'd suggest is a `config-layers` workorder. It would port best-ver
 - Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/bv; rm -rf "$S"; mkdir -p …`
 - Bash: `cd /home/skogix/skogai-runner/best-version-so-far && rtk ls modules/core/tests/; timeout 500 mise exec -- ./bin/skogai m…`
 
+## 2026-11-07 02:05 · turn 3281a03a
+
+**User**
+
+> now you have the target we are reaching for / a example of how we potentially could implement this. is the next step to plan out features overall and /vv-harness:harness-orchestrate how we implement this and what questions we need to answer etc?
+
+**Assistant**
+
+Partly. Planning the features comes next, but orchestration doesn't come next. `harness-orchestrate` only pays off once there are two or more features that each have a verified spec, depend on nothing, and touch different files. Right now most of this work depends on decisions only you can make, and the first pieces can't start until those decisions are made. I'd go in this order:
+
+1. **Answer the open questions.** They change what every feature looks like.
+2. **Write the feature plan into `features.json`** and send it through the spec gate, so each feature gets a verified spec.
+3. **Orchestrate only the parts that can run in parallel.** That probably doesn't happen until after the module model and config have landed.
+
+## Questions to answer first
+
+**Module model** (blocks everything):
+1. Do we keep one module per Markdown file, `<name>.md` plus `<name>.sh` as the runner has now? Or a directory, `<name>/module.md` plus `files:` and `tests/`, as best-version has? Best-version's layout is what makes install, diff and per-module tests possible.
+2. Which name wins for each pair? `requires` or `depends_on`, `config` or `defaults`, `command` (explicit) or `<name>.sh` (by convention)?
+3. Do `owns`, `writes`, `reads` and `watches` join best-version's manifest? They're what `run` enforces, and best-version has nothing like them.
+
+**Discovery and registry:**
+
+4. Best-version finds modules by searching local, global and source layers, where the first by name wins. The runner symlinks them into `SKOGAI_COMMANDS` layers. Do we keep both? Or does discovery replace `register`, or the other way around?
+
+**Config:**
+
+5. Is the fold order the same as best-version's: module defaults, system, global, local, `module.local.md`, `--file`, env?
+6. Types: is every value a string, or do frontmatter layers keep their YAML types?
+7. Env names: what replaces dropping `-`, given that runner names allow it?
+8. How does config reach a command run by `run`: `module env` passed with `-e` into Podman, and nothing else?
+
+**Carried over from earlier:**
+
+9. When does a `depends_on` count as met at run time? This is what `hello-reader` is waiting on.
+10. What are paths in a workorder relative to: the repo root, or the file's own directory?
+11. What happens to `best-version-so-far/` once this lands: is it merged in, kept as a reference, or deleted?
+
+## A rough feature list once those are answered
+
+| # | feature | depends on | can run in parallel with |
+|---|---|---|---|
+| A | module manifest + contract rules (one schema, fixtures per reason) | Q1–3 | none, it's first |
+| B | `config` as a usage script (port of best-version, no sed or awk) | A, Q5–7 | C |
+| C | discovery / registry reconciled | A, Q4 | B |
+| D | `run` passes `module env` into the container | B, Q8 | E |
+| E | `depends_on` at run time, plus `hello-reader` | A, Q9–10 | D |
+| F | events name workorder and commit (`run-workorder-link`) | none | B, C (it owns `run/usage.sh`, so it must be done before D) |
+
+So the first orchestration batch would be B and C, possibly with F, once A has landed. F can be handed out today as an ordinary workorder.
+
+If you answer the questions (rough answers are fine), I'll write the plan into `docs/plan.md` and `features.json` and run A through the spec gate. Want me to start with F now so that track keeps moving meanwhile?
+
