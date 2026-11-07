@@ -21,7 +21,7 @@ A module is three things in one file: key/value defaults (`[env]`), a usage decl
 
 ```toml
 [env]
-SKOGAI_HELLO_GREETING = "{{ get_env(name='SKOGAI_HELLO_GREETING', default='hi') }}"
+SKOGAI_HELLO_GREETING = "{{ env.SKOGAI_HELLO_GREETING | default(value='hi') }}"
 
 [_.skogai.hello]
 description = "..."
@@ -32,6 +32,8 @@ writes = ["greeting.txt"]
 usage = 'arg "<who>"'
 run = 'echo "$SKOGAI_HELLO_GREETING $usage_who" | tee greeting.txt'
 ```
+
+**Module defaults use the form `K = "{{ env.K | default(value='d') }}"`.** `env.K` sees the caller's env and every earlier mise layer, so a module installed in a later layer (a project's `.mise/conf.d`) still loses to a value set in system or global config, and the caller's env still wins. A `get_env(name='K', default='d')` default would be evaluated in the module's layer and, being a later layer, would replace the earlier setting with `d`. `skogai config set` stores user settings in the `get_env` form, because those must sit above the defaults. The checker does not enforce the form (see `docs/config.md`).
 
 - **Name**: the single key under `_.skogai`. It is the name used in the data record, the env prefix, task names and every cross-file rule. The file stem is compared with it only for `name-mismatch`.
 - **Which files are modules**: a case-sensitive `.toml` suffix with a non-empty stem. Everything else (`.TOML`, `.toml` alone, `x.toml.md`) is parsed as Markdown, as before.
@@ -74,7 +76,7 @@ Verified by the fixtures in `tests/fixtures/module/` (`valid/`, `invalid/<reason
 
 - Two modules whose prefixes collide (`a-b` and `ab` both give `SKOGAI_AB_`) are not detected.
 - A TOML construct that mise accepts but yq rejects or decodes differently is judged by what yq yields.
-- Value types, usage-spec linting, install, config get/set, run executing the task, `depends_on` at run time and `watches` behaviour are planned, not built.
+- Value types, usage-spec linting, install, run executing the task, `depends_on` at run time and `watches` behaviour are planned, not built.
 
 ## mise facts (mise 2026.10.17, verified by hand on 2026-11-07, not by a test)
 
