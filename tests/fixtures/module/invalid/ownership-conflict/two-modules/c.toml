@@ -1,0 +1,6 @@
+[_.skogai.c]
+owns = ["own.txt"]
+
+[tasks.c]
+usage = ''
+run = 'true'

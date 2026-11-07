@@ -1,0 +1,5 @@
+[_.skogai.usage-number]
+
+[tasks.usage-number]
+usage = 3
+run = 'true'

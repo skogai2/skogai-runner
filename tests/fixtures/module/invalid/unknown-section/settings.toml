@@ -1,0 +1,7 @@
+min_version = "2024.1.1"
+
+[_.skogai.settings]
+
+[tasks.settings]
+usage = ''
+run = 'true'

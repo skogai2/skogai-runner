@@ -1,0 +1,6 @@
+[_.skogai.name-key]
+name = "name-key"
+
+[tasks.name-key]
+usage = ''
+run = 'true'

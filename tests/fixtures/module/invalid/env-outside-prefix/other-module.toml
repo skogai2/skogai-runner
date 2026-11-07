@@ -1,0 +1,8 @@
+[env]
+SKOGAI_OTHER_X = "1"
+
+[_.skogai.other-module]
+
+[tasks.other-module]
+usage = ''
+run = 'true'

@@ -1,0 +1,6 @@
+[_.skogai.a]
+depends_on = ["b"]
+
+[tasks.a]
+usage = ''
+run = 'true'

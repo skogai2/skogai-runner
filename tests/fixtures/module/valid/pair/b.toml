@@ -1,0 +1,7 @@
+[_.skogai.b]
+depends_on = ["a"]
+owns = ["b.txt"]
+
+[tasks.b]
+usage = ''
+run = 'true'

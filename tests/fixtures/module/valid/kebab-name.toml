@@ -1,0 +1,8 @@
+[env]
+SKOGAI_KEBABNAME_X = "1"
+
+[_.skogai.kebab-name]
+
+[tasks.kebab-name]
+usage = ''
+run = 'true'

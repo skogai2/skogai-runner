@@ -1,0 +1,9 @@
+[_.skogai.other]
+
+[tasks.other]
+usage = ''
+run = 'true'
+
+[tasks.build]
+usage = ''
+run = 'true'

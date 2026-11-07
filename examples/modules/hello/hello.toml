@@ -1,0 +1,11 @@
+[env]
+SKOGAI_HELLO_GREETING = "{{ get_env(name='SKOGAI_HELLO_GREETING', default='hi') }}"
+
+[_.skogai.hello]
+description = "greet someone and keep the greeting in greeting.txt"
+owns = ["greeting.txt"]
+writes = ["greeting.txt"]
+
+[tasks.hello]
+usage = 'arg "<who>"'
+run = 'echo "$SKOGAI_HELLO_GREETING $usage_who" | tee greeting.txt'
