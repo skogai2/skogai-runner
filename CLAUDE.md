@@ -59,6 +59,8 @@ Everything is Bash, and argc comment tags (`# @cmd`, `# @arg`, `# @meta`, `# @en
 
 `mise run test` runs every suite with `CONTRACT_IMPL=usage RUN_IMPL=usage`; `mise run test:argc` runs `tests/contract.bats` and `tests/run.bats` against the frozen argc files.
 
+**Modules, config, install (F003-F005).** A module is a mise toml: `[_.skogai.<name>]` relationships, `[env]` `SKOGAI_<NAME>_*` defaults in the `{{ env.K | default(value='d') }}` form, `[tasks.<name>]` with `usage` (`docs/module.md`; `contract/usage.sh` checks `.toml` files too). `src/core/config/usage.sh` reads/writes settings across the mise layers, storing values as `get_env` templates so the caller env wins (`docs/config.md`). `src/core/module/usage.sh` installs a module by copying its toml into a level's mise conf.d after the checker and its tests pass (`docs/install.md`). Tests isolate mise with `env -i` plus `MISE_*` dirs under `$BATS_TEST_TMPDIR`.
+
 **Run events.** `run/usage.sh` appends one JSONL event per `check`/`exec`/`apply`/`end` step to `--log` (env `SKOGAI_LOG`, default `${XDG_STATE_HOME:-$HOME/.local/state}/skogai/run.jsonl`), in the skogai-core envelope `{ts, event, action?, input}` plus `id, run, module, revision, outcome`. See `docs/evidence.md`. Every test that calls the runner must isolate `XDG_STATE_HOME` and unset `SKOGAI_LOG`, or it writes to the real log.
 
 `tests/examples.bats` turns every `examples/usage/<name>/<name>.md` into a live test (check valid; run applied; second run unchanged). A new example is a new test.
