@@ -50,3 +50,12 @@
 - Checks on merged master: mise run test 121/121, 0 skips; smoke clean.
 - Next: run-workorder-link (events name workorder + commit; owns run/usage.sh). hello-reader still waits on skogix: depends_on at run time, path base.
 - Leftover: three old worktrees from session 5 under .claude/worktrees (wo/run-events, wo/examples-live, wo/test-default-usage), already merged; not removed without asking.
+
+## Session 6 (cont.) - module format F003 (2026-11-07)
+- Fixed: run/usage.sh resolves its registry symlink before finding contract/ (9e82212).
+- skogix answered the module/config questions (recorded in context_summary). Module = mise toml (conf.d drop-in): [_.skogai.<name>] relationships, [env] SKOGAI_<NAME>_ defaults, [tasks.<name>] with usage. best-version-so-far is the reference target.
+- F003 spec: gate BLOCK (24 Qs, lead-answered), then PASS. Implemented by a Sonnet worktree agent (could not commit; lead committed 6ce9f55, merged ff9f154).
+- Checks on merged master: module.bats 14/14, mise run test 136/136 (with the stray examples/usage/hello/greeting.txt moved aside; with it, the known 8 failures), test:argc 41/41, smoke clean.
+- Lead defaults skogix may revisit: module toml allows only _ / env / tasks (unknown-section otherwise); directory layout is convention only.
+- Next: B (config over mise layers) and C (install = copy into conf.d) in parallel; F (run-workorder-link) any time. Then D (run with module env), E (depends_on = installed).
+- Leftover worktree: .claude/worktrees/agent-a2bba50ed427d5c10 (merged; its copy of .skogai/logs/skogai-core/log.jsonl has agent-session lines, so not force-removed).

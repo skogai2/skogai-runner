@@ -2,7 +2,7 @@
   "project": "skogai-runner",
   "created": "2026-10-29T15:50:22Z",
   "total_features": 3,
-  "passing": 2,
+  "passing": 3,
   "features": [
     {
       "id": "F001",
@@ -73,7 +73,7 @@
       "id": "F003",
       "description": "Module format v1: a module's declaration is a mise config file, and the contract checker reads it (plan step 1, settled with skogix 2026-11-07, see context_summary \"Module model and config answers\" and \"mise conf.d\").\n\nLayout (documentation convention, not checked: the checker only receives files): a module in source is a directory <name>/ holding <name>.toml (a mise config file, installed later as a conf.d drop-in, so its file name is the module name), README.md (what the module is, every key it sets, what it owns), optionally SKOGAI.md (agent-facing) and tests/.\n\nModule name: the single key under `_.skogai`. It is the <name> used for the data record, the env prefix, task names and every cross-file rule. The file stem (file name without `.toml`) is compared with it only for name-mismatch. Files are recognised as modules by a case-sensitive `.toml` suffix with a non-empty stem; anything else is parsed as Markdown, as today.\n\nAllowed top-level keys of a module toml: `_`, `env`, `tasks`. Any other top-level key (`tools`, `settings`, `vars`, `hooks`, `min_version`, ...) gives reason `unknown-section` (collected). Under `_`, only `skogai` is allowed; another key under `_` is also `unknown-section`.\n\nStopping parse stage (exactly one reason, nothing else is checked for that file, and the file takes no part in cross-file rules, as F001's parse reasons):\n1. invalid-toml: `yq -p toml -o json` exits non-zero.\n2. no-declaration: the parsed document is null (empty file) or not a table, or `_` is missing or not a table, or `_.skogai` is missing, not a table, or an empty table.\n3. multiple-declarations: `_.skogai` has more than one key (even if one equals the stem).\n4. not-a-mapping: the value of the single `_.skogai.<name>` key is not a table. An empty table is valid (every field is optional).\n\nCollected reasons (any number, together with the existing field reasons, then the existing cross-file reasons):\n- invalid-name: <name> does not match ^[a-z][a-z0-9-]*$ (existing rule). An invalid name still takes part in duplicate-name, missing-dependency and ownership-conflict, as in F001.\n- name-mismatch: <name> differs from the file stem. `hello.toml` with key `Hello` gets both invalid-name and name-mismatch.\n- unknown-key: a key in the `_.skogai.<name>` table other than description, depends_on, reads, writes, owns, watches. `name` and `defaults` are unknown here (the name is the table key; defaults are `[env]`). Existing type and path rules apply to the allowed keys exactly as for Markdown.\n- env-outside-prefix: `[env]` is optional. If present it must be a table (else wrong-type). Every key except mise's directive key `_` must start with the prefix `SKOGAI_<N>_`, where <N> is <name> uppercased with `-` removed (also computed for an invalid name), and be longer than the prefix (the bare prefix alone is outside). Values are not checked (types deferred).\n- missing-task: `tasks` missing or not a table, or no `tasks.<name>`, or it is not a table, or it lacks a string `usage`, or it lacks `run` (a string or an array of strings). The usage string itself is not linted.\n- task-outside-prefix: a key of `tasks` other than <name> that does not match `<name>:<sub>` with <sub> matching ^[a-z][a-z0-9-]*$ (one colon).\n- unknown-section: see above.\nTwo modules whose prefixes collide (e.g. `a-b` and `ab`) are not detected in v1; docs/module.md lists it as open.\n\nImplementation constraint: src/core/contract/usage.sh only (contract/argc.sh is frozen; no sed/awk). The record grows to {file, kind: \"md\"|\"toml\", parse, data, module} where `module` (toml only) carries what the module rules need (stem, top-level keys, env, tasks). VERDICTS may change: the field rules and cross-file rules are shared by both kinds; the allowed-key list for the relationship table differs by kind; the module-only rules apply when kind is toml. For Markdown input the output must stay byte-identical: `mise run test` and `mise run test:argc` stay green with no change to tests/contract.bats or tests/fixtures/contract/. Output shape ({file, verdict, reasons}, reasons sorted unique) and exit codes are unchanged. A TOML construct that mise accepts but yq rejects or decodes differently is judged by what yq yields; docs/module.md says so.\n\nExample: examples/modules/hello/hello.toml and README.md:\n  [env] SKOGAI_HELLO_GREETING = \"{{ get_env(name='SKOGAI_HELLO_GREETING', default='hi') }}\"\n  [_.skogai.hello] description, owns = [\"greeting.txt\"], writes = [\"greeting.txt\"]\n  [tasks.hello] usage = 'arg \"<who>\"', run = 'echo \"$SKOGAI_HELLO_GREETING $usage_who\" | tee greeting.txt'\nIt is valid. Live test (skipped only when `mise` is not on PATH): copy hello.toml into $BATS_TEST_TMPDIR/p/.mise/conf.d/, then in that dir run mise under `env -i PATH=\"$PATH\" HOME=<tmp> MISE_CONFIG_DIR MISE_SYSTEM_DIR MISE_DATA_DIR MISE_STATE_DIR MISE_CACHE_DIR` (all under $BATS_TEST_TMPDIR) and `MISE_TRUSTED_CONFIG_PATHS=<that dir>`: `mise run -q hello world` exits 0, prints `hi world`, and leaves greeting.txt containing `hi world`; with `SKOGAI_HELLO_GREETING=yo` added to that env it prints `yo world` (the caller's env beats the default).\n\nDocs: docs/module.md describes the layout, the declaration, the naming rules and every reason, marked implemented/verified. It records these mise 2026.10.17 facts as verified by hand on 2026-11-07 (not by a test): conf.d is loaded at system (/etc/mise/conf.d), global (~/.config/mise/conf.d, follows MISE_CONFIG_DIR) and project (.mise/conf.d, .config/mise/conf.d) level; [env] merges key by key across layers, a later layer winning; a later layer's [tasks.x] replaces the whole task (so only the module's own file defines its tasks and relationships, and override files set [env] only); `mise config get _.x` reads only the nearest file, no merge; a plain [env] value beats the caller's env, a get_env default does not.\n\nEvidence (QA binding): evidence_type corpus + unit + integration. tests/module.bats with fixtures under tests/fixtures/module/{valid,invalid/<reason>}/, kept apart from tests/fixtures/contract/ because `mise run test:argc` runs contract.bats against the frozen argc checker. Every invalid/<reason>/ file produces exactly that one reason; every valid file is valid (at least: minimal empty table, full declaration, env with `_` directive key, extra `hello:sub` task). Multi-file case directories under valid/ and invalid/ follow F001's convention (one call per directory, compared byte for byte with expected.jsonl where present); one of them mixes a .md workorder and a .toml module that own the same path and expects ownership-conflict on both. Explicit cases for the overlaps: `Hello` key in hello.toml (invalid-name + name-mismatch), `_.skogai = \"x\"` (no-declaration), `_ = \"x\"` (no-declaration), zero-byte file (no-declaration), two keys one matching the stem (multiple-declarations only), `_.skogai.hello.name` (unknown-key). Tests isolate HOME and XDG_STATE_HOME as the suite does. `mise run test`, `mise run test:argc` and `.harness/init.sh smoke_test` pass.\n\nOut of scope: install/uninstall (C), config get/set (B), run executing the mise task (D), depends_on at run time (E), watches behaviour, value types, usage-spec linting, env prefix collisions.",
       "priority": 3,
-      "status": "pending",
+      "status": "passing",
       "depends_on": [
         "F001"
       ],
@@ -92,16 +92,26 @@
         "verified_at": "2026-11-07T02:38:55Z"
       },
       "assigned_to": null,
-      "test_file": null,
-      "coverage": null,
-      "approaches_tried": [],
+      "test_file": "tests/module.bats",
+      "coverage": "not measured (no bash coverage tooling)",
+      "approaches_tried": [
+        "Sonnet implementer in a worktree, TDD; fixtures generated by a scratch script, kept static; one pass, no correction cycles"
+      ],
       "correction_cycles": 0,
       "scope_expansions": 0,
       "discovered_via": null,
       "failure_reason": null,
-      "notes": "Feature A of the module/config plan (2026-11-07). Next: B config, C install (parallel after A), D run with module env, E depends_on = installed, F run-workorder-link. Spec gate: BLOCK (24 questions, answered by the lead), then PASS. Gate notes for the implementer: assert `hi world` on stdout only (bats run merges stderr); tests/module.bats must glob both *.md and *.toml (C-locale sorted) per case directory so the mixed ownership-conflict case is one call.",
+      "notes": "Feature A of the module/config plan (2026-11-07). Next: B config, C install (parallel after A), D run with module env, E depends_on = installed, F run-workorder-link. Spec gate: BLOCK (24 questions, answered by the lead), then PASS. Gate notes for the implementer: assert `hi world` on stdout only (bats run merges stderr); tests/module.bats must glob both *.md and *.toml (C-locale sorted) per case directory so the mixed ownership-conflict case is one call. Implemented 2026-11-07 (6ce9f55, merged ff9f154): module.bats 14/14, mise run test 136/136, test:argc 41/41.",
       "risk": "standard",
-      "require_plan_approval": false
+      "require_plan_approval": false,
+      "proof": {
+        "evidence_type": "corpus + unit + integration",
+        "artifact": "tests/module.bats, tests/fixtures/module/",
+        "not_established": [
+          "prefix collisions between modules",
+          "usage-spec linting"
+        ]
+      }
     }
   ]
 }
