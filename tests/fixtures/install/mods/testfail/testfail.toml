@@ -1,0 +1,11 @@
+[env]
+SKOGAI_TESTFAIL_X = "1"
+
+[_.skogai.testfail]
+description = "fixture module testfail"
+owns = ["testfail.txt"]
+writes = ["testfail.txt"]
+
+[tasks.testfail]
+usage = 'arg "<who>"'
+run = 'echo "testfail $usage_who"'
