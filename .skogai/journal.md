@@ -280,3 +280,42 @@ Once you've answered those, I'll write A's spec, run it through the spec gate, a
 - Bash: `rtk git add .harness/context_summary.md`
 - Bash: `rtk git commit -q -m "harness: record skogix's module model and config decisions`
 
+## 2026-11-07 03:15 · turn e2622c60
+
+**User**
+
+> 1. well mise probably have some way to rename/define the file names to begin with so we should probably look closer how mise does it normally. 
+> 2. i think we do a regular entryfile for the module itself; SKOGAI.md to explicitly not use {AGENTS,CLAUDE,GEMINI,CODEX}.md etc. and either MODULE.md or README.md is for the module itself if that makes sense?
+> 3. leave for later
+
+**Assistant**
+
+## A proposal for the module format (A)
+
+**A module in source** is a directory:
+
+```
+hello/
+  hello.toml     # mise config: [env] defaults, [tasks.hello] with its usage spec, [_.skogai.hello] relationships
+  README.md      # what the module is, every key it has, what it owns (for people)
+  SKOGAI.md      # optional: instructions for agents working on or with it
+  tests/
+```
+
+**Installing a module copies `hello.toml` into the `conf.d/` of the chosen level.** That is `.mise/conf.d/` for local, `~/.config/mise/conf.d/` for global, and `/etc/mise/conf.d/` for system. This matches your decision 4, run from anywhere and copy up once tests pass, without new machinery. mise already folds system, global, local in your order, and `mise config ls` shows which file each setting came from. Uninstalling deletes the file.
+
+On your item 2: I'd use **README.md** for the module's own description, because every tool and forge already shows it. **SKOGAI.md** would be the agent-facing file, so skogai never depends on AGENTS.md, CLAUDE.md and the rest. MODULE.md would be a third name that adds nothing. I'm treating `watches` as deferred.
+
+## Two risks this shape brings
+
+1. **Every installed module is always active.** All `conf.d` files load in every shell under that level, so every module's `[env]` and tasks are visible everywhere. Prefixing every key `SKOGAI_<MODULE>_` and every relationship `_.skogai.<module>` keeps them from colliding. It doesn't give "each module gets only its own env", though. `run` would have to pass only that module's keys into the container, which is the plan for D anyway.
+2. **Overriding one key.** A later layer can override an env key: a local `hello.toml` beats the global one. For a task, the later definition replaces the whole task. I haven't checked how mise merges two files that define the same task, so A's spec has to pin it down.
+
+Next step is to write A's spec on this shape and run it through the spec gate. It covers: the module directory, `hello` converted into it, the contract checker reading `[_.skogai.<name>]` from the toml, and the naming rules. The spec gate is a separate review agent that checks the spec is complete and testable before any code. Should I go ahead on this shape, or do you want to change the layout first?
+
+**Actions**
+
+- Bash: `mise settings ls 2>/dev/null | rtk grep -iE 'filename|config_file|conf|env_file|task' | head -30; mise help 2>&1 | rtk g…`
+- Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/names; rm -rf "$S"; mkdir …` (failed)
+- Edit `.harness/context_summary.md`
+
