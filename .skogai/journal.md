@@ -319,3 +319,52 @@ Next step is to write A's spec on this shape and run it through the spec gate. I
 - Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/names; rm -rf "$S"; mkdir …` (failed)
 - Edit `.harness/context_summary.md`
 
+## 2026-11-07 03:34 · turn 6afce52f
+
+**User**
+
+> 1. well actually the modules [env] would not be "visible" until the command actually is invoked/executed - but yeah i get what you are saying and i understand.
+> 2. no problems
+>
+> looks good so far
+
+**Assistant**
+
+F003, the module format (feature A), is written into `features.json`. It's now with the spec gate, a separate review agent that checks the spec is complete and testable before any code is written. I've committed nothing since `ef321fd`.
+
+**One more mise result** settles risk 2. `[env]` merges key by key. A later layer that redefines a task replaces the whole task, which silently dropped its `run` and `usage`. `mise config get _.skogai.<name>` reads only the nearest file. So the rule in F003 is: only the module's own toml defines its tasks and relationships, override files set `[env]` only, and the checker reads the module's toml directly.
+
+**What F003 specifies:**
+- **Layout:** a `<name>/` directory with `<name>.toml`, `README.md`, an optional `SKOGAI.md`, and `tests/`. The toml is named after the module, so it can later be copied into any level's `conf.d/` as-is.
+- **Inside the toml:**
+  - `[_.skogai.<name>]` holds the relationships, with the same rules as today's frontmatter.
+  - `[env]` holds the defaults, each key prefixed `SKOGAI_<NAME>_`.
+  - `[tasks.<name>]` is the command, with its `usage` spec. Any other task must be named `<name>:…`.
+- **Checker:** `contract/usage.sh check` accepts `.toml` files alongside `.md`. Only the parse stage is new, so one call can still flag cross-file problems, such as an ownership conflict between a workorder and a module. There are 7 new reasons (`invalid-toml`, `no-declaration`, `multiple-declarations`, `name-mismatch`, `env-outside-prefix`, `missing-task`, `task-outside-prefix`), each with its own fixture directory.
+- **Example:** `examples/modules/hello/`. A test copies it into a scratch `.mise/conf.d/` and runs `mise run hello world`.
+- **Out of scope:** install, config, running through `run`, `depends_on` at run time, `watches`, and value types.
+
+**A mistake on my side, fixed:** a hook routes `jq` through `rtk`, which shortens long strings with `...`. When I first added F003, that shortened text was written back over `features.json`. Nothing in the file had changed since the last commit, so I restored it from git, and the full descriptions are intact. The entry is now added through a script, which the hook doesn't rewrite. The trap is in the gotchas list in `.harness/context_summary.md`.
+
+When the gate reports back I'll bring you any questions it raises that are yours to decide. Once it passes, F003 goes to an implementer, and B (config) and C (install) become the first batch to run in parallel.
+
+**Actions**
+
+- Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/merge; rm -rf "$S"; mkdir …`
+- Bash: `rtk jq '.features[0] | keys' .harness/features.json; rtk jq '.features[1] | {id, name, description: (.description[0:600]…`
+- Bash: `rtk jq -r '.features[1].description, .features[1].priority, (.features[1].spec|tostring), .features[1].notes' .harness/f…`
+- Read `src/core/contract/usage.sh`
+- Bash: `rtk ls tests/fixtures/contract/invalid tests/fixtures/contract/valid`
+- Bash: `cd /tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/merge && mise exec -C /ho…`
+- Bash: `M=/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/merge; mise exec -- yq -p …`
+- Bash: `cat > /tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/f003.txt <<'EOF'`
+- Bash: `D="$(cat /tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/f003.txt)"; tmp="$(…` (failed)
+- Bash: `D="$(cat /tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/f003.txt)"; tmp="$(…` (failed)
+- Read `.harness/features.json`
+- Bash: `rtk git diff --stat -- .harness/features.json; rtk git log --oneline -1 -- .harness/features.json`
+- Bash: `rtk git checkout -- .harness/features.json && rtk /usr/bin/jq -c '.features[] | {id, status}' .harness/features.json`
+- Write `/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/add-f003.sh`
+- Bash: `bash /tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/add-f003.sh`
+- Edit `.harness/context_summary.md`
+- Agent: Spec gate for F003 module format
+
