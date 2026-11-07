@@ -1049,3 +1049,77 @@ When the agents report, I'll review each diff against its slice and merge the cl
 - Agent: Audit workorder docs
 - Bash: `herdr pane send-keys w99:p6 ctrl+c >/dev/null 2>&1; herdr pane close w99:p6 2>&1 | head -c 200`
 
+## 2026-11-07 22:52 · turn 5e9446a1
+
+**User**
+
+> /vv-harness:harness-orchestrate "then we can go on and start by mergeing claude.md into agents.md and claude.md only at-linking to agents.md then we go over every documentation written so far and clean up or sanity check it"
+
+**Assistant**
+
+skogix, while this session was waiting you merged everything into master and removed the audit worktrees. As a result, the doc audit never ran.
+
+**What happened** (from the reflog):
+- `wt squash` turned `remake/config` into `d801c6a`, "Remake modules from the ground up, config first".
+- `docs/audit-workorders` was merged on top as `32d5837` and pushed. The audit branches never had any edits, so that merge only brought in my individual commits up to `6a06a71`.
+- The herdr worktrees and the local branches are gone.
+- Local master has one more commit on top of origin, the journal hook's `2f562f6`.
+- My work (the deletion, `features.json`, the `AGENTS.md` merge, the mise research) is all on master.
+- None of the three auditors could find its worktree, so they made no edits and are now stopped. The main checkout is untouched apart from the hook's `log.jsonl`.
+
+**The mise research is in `.skogai/research/mise.md`** (tested on mise 2026.10.17, isolated scratch env). The findings that matter most for config:
+- **`K = { default = "d" }` is built in, in `[env]` or `[vars]`.** It only fills a value that nothing else set, the caller's env still wins, and mise itself reports which file the value came from. The old config needed its own origin ladder only because it used template forms.
+- **`[vars]`** is a layered key/value store with `default`, `required`, `prompt` and `redact`. mise never exports it to tasks, and `mise vars ls` shows each value's source file.
+- **Task usage flags with `env="K" default="d"`** resolve command-line flag, then env, then default, and check `choices`. That covers the "command parameters" layer the old config didn't handle.
+- **Modules calling each other works**, both as `run = [{task = "x args"}]` and as a nested `mise run`, and exit codes come back. Once several tasks run together, mise prefixes each output line with the task name, so machine-readable output needs `--output interleave`.
+- **Corrections that break old assumptions:**
+  - mise ignores git when finding project files: it loads them from any parent directory.
+  - The global `config.override.toml` ranks above `mise.local.toml`.
+  - An untrusted project fails hard on any `[env]` entry; the tests hid this by setting `MISE_TRUSTED_CONFIG_PATHS`.
+- **Still unsolved:** the researcher found no built-in way to store a user value that loses to the caller's env, other than the `get_env` template you rejected. The doc lays out four storage candidates.
+
+**Decision for you:** should I rerun the doc audit? My recommendation: same three slices, same packets, rebased on current master. This time the worktrees would be created by the agents themselves rather than by herdr, so cleaning up herdr can't remove them mid-run. herdr `agent start` is also still broken here (the pane-busy error). If you'd rather go through the storage candidates in `mise.md` first, say so and I'll do that instead.
+
+**Actions**
+
+- Bash: `cd /home/skogix/skogai-runner; rtk git status -s; rtk ls docs .skogai .skogai/workorders/done best-version-so-far; rtk w…`
+- Read `AGENTS.md`
+- Read `CLAUDE.md`
+- Write `AGENTS.md`
+- Write `CLAUDE.md`
+- Bash: `rtk git add AGENTS.md CLAUDE.md`
+- Bash: `rtk git commit -q -m "docs: merge CLAUDE.md into AGENTS.md; CLAUDE.md only imports it`
+- Bash: `test "${HERDR_ENV:-}" = 1 && echo inside; herdr status 2>&1 | head -3; herdr integration status 2>&1 | head; herdr pane …`
+- Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-b9b0-df173714ecb6/scratchpad/docaudit; mkdir -p $S`
+- Bash: `herdr pane layout --pane "$HERDR_PANE_ID" 2>&1 | head -5; herdr worktree create --workspace "$HERDR_WORKSPACE_ID" --bran…`
+- Bash: `for s in concepts workorders; do herdr worktree create --workspace "$HERDR_WORKSPACE_ID" --branch docs/audit-$s --base 6…`
+- Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-b9b0-df173714ecb6/scratchpad/docaudit`
+- Bash: `herdr agent list | jq -c '.result.agents'; for p in w9B:p1 w9C:p1 w9D:p1; do herdr pane read $p --source visible 2>/dev/…`
+- Bash: `bash -c '`
+- Bash: `herdr pane read w9B:p1 --source visible 2>&1 | tail -15`
+- Bash: `herdr pane get w9B:p1 2>&1 | head -c 800; echo; herdr agent start --help 2>&1 | head -40`
+- Bash: `bash -c '`
+- Bash: `herdr agent explain w9B:p1 --json 2>&1 | head -c 1500; echo; herdr pane process --help 2>&1 | head -5; ps -o pid,comm,ar…`
+- Bash: `herdr --skill 2>/dev/null | grep -n -i -B2 -A6 "available shell\|pane_busy\|shell prompt" | head -50`
+- Bash: `bash -c '`
+- Bash: `bash -c '`
+- Bash: `herdr tab close w99:t4 >/dev/null 2>&1; herdr pane list --workspace "$HERDR_WORKSPACE_ID" | jq -c '.result.panes[]|{pane…`
+- AskUserQuestion
+- Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-b9b0-df173714ecb6/scratchpad/docaudit; for s in overvie…`
+- Read `/tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-b9b0-df173714ecb6/scratchpad/docaudit/overview.agent.txt`
+- Read `/tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-b9b0-df173714ecb6/scratchpad/docaudit/concepts.agent.txt`
+- Read `/tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-b9b0-df173714ecb6/scratchpad/docaudit/workorders.agent.txt`
+- Agent: Audit overview docs
+- Agent: Audit concept docs
+- Agent: Audit workorder docs
+- Bash: `herdr pane send-keys w99:p6 ctrl+c >/dev/null 2>&1; herdr pane close w99:p6 2>&1 | head -c 200`
+- Bash: `cd /home/skogix/skogai-runner; rtk git branch --show-current; rtk git log --oneline -3 --all | head; rtk git worktree li…`
+- Bash: `cd /home/skogix/skogai-runner; rtk git log --graph --format='%h %an %ad %s' --date=format:%H:%M -14 | cat; rtk git show …`
+- Bash: `cd /home/skogix/skogai-runner; for b in docs/audit-workorders docs/audit-concepts docs/audit-overview remake/config; do …`
+- ToolSearch: select:SendMessage,TaskStop
+- TaskStop: audit-workorders
+- TaskStop: audit-overview
+- TaskStop: audit-concepts
+- Bash: `cd /home/skogix/skogai-runner; rtk git status -s; rtk ls /tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-…`
+- Read `/tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-b9b0-df173714ecb6/scratchpad/docaudit/workorders.md`
+
