@@ -202,3 +202,81 @@ So the first orchestration batch would be B and C, possibly with F, once A has l
 
 If you answer the questions (rough answers are fine), I'll write the plan into `docs/plan.md` and `features.json` and run A through the spec gate. Want me to start with F now so that track keeps moving meanwhile?
 
+## 2026-11-07 03:01 · turn 7727195d
+
+**User**
+
+> 1. a module originally had a module.md file. now when we move over to usage and heavily into mise and everything surrounding it. maybe are looking for a mise.skogai.toml or something similar? a module is pretty much:
+>   - a setting/configuration definition in a key-value representation like a toml,json,git-config or other kind of key-value defaults.
+>   - a usage declaration or input->output strict types
+>   - relationship-mappings such as "this module creates x, edits y, reacts to z" etc"
+> 2. owns, writes and watches are simple overall. owns = creates and are responsible for, writes = edits the file/gives input to the owning module to react to or use, watches - on-event triggers on x by giving the event to executable y.
+> 3. currently not needed for config i believe and i dont know the manifest you are talking about
+> 4. our skogai installer / main entrypoint should be able to point to any module from wherever, for example local. and if all tests/rules are followed they are copied to global or system level storage like /etc/skogai or ~/.config/skogai  
+> 5. module defaults, system, global, local, override, command parameters, environment variables. i.e. like every other cli program ever so nothing special really. best practices and basic unix philosophy
+> 6. currently types is not important at this stage. we want to add modules for validating paths, ints and other basic objects i presume but that is done later.
+> 7. kebab-case for the win. in dot-notation we simply ignore everything except the dot / it is a full word for now. a.b-c.d=A_BC_D, SKOGAI_FOO_BAR=skogai.foo.bar and so on
+> 8. each module have their own envs defined and gets injected. mise manage this via "mise args" are injected and available for mise tasks for example. 
+> 9. that the command runner have the command that is called available / the module is installed. 
+> 10. for now the git root
+> 11. it will be deleted / used as reference until all things are converted to our new version
+
+**Assistant**
+
+Your answers are recorded as decisions in `.harness/context_summary.md` (commit `ef321fd`), together with what I found testing mise.
+
+## Your module idea, tried in mise
+
+I built a small module as `mise.hello.toml` in the scratchpad, with mise 2026.10.17:
+
+```toml
+[env]                                   # config defaults
+SKOGAI_HELLO_GREETING = "{{ get_env(name='SKOGAI_HELLO_GREETING', default='hi') }}"
+
+[_.skogai]                              # relationships (mise's free-form namespace)
+owns = ["greeting.txt"]
+
+[tasks.hello]                           # the usage declaration
+usage = 'arg "<who>"'
+run = 'echo "${SKOGAI_HELLO_GREETING} ${usage_who}" > greeting.txt'
+```
+
+- **Usage declaration:** `MISE_ENV=hello mise run hello world` works, and a missing `<who>` is refused before the task runs.
+- **Relationships:** `mise config get _.skogai.owns` returns `["greeting.txt"]`, so the contract checker could read them from the same file.
+- **Override layer:** a `mise.local.toml` overrides the defaults.
+- **The env-var catch:** a plain `[env]` value beats the caller's environment variable, which is the reverse of your order. Writing each default as `get_env(..., default=...)` fixes it. A *literal* value in a local or override layer still beats the caller's env, though. So either every layer uses `get_env`, or the runner applies the env layer itself.
+
+All three parts of your module definition fit in one mise file, and mise already does the parsing, the layering and the env injection.
+
+## Features, in order
+
+| # | feature | needs |
+|---|---|---|
+| **A** | **Module format.** One `mise.<name>.toml` per module, and the contract checker reads the relationships from it instead of Markdown frontmatter. `hello` gets converted. | Q1, Q2 below |
+| **B** | **Config.** `skogai config get/set/list/files` over the mise layers, in your order, with origin shown and your env naming. A usage port of best-version's behaviour, with its `core.bats` config cases as acceptance tests. | A |
+| **C** | **Install.** `skogai` runs a module from any path; once its tests and rules pass, it can be copied to global or system. Best-version's `module add` (`add` / `same` / `keep` plan, `--apply`). | A |
+| **D** | **Run with module env.** `run` executes the module's mise task in Podman with only that module's resolved env injected. | B |
+| **E** | **`depends_on` met if installed.** `hello-reader` is the example. | C |
+| **F** | **Runs name their workorder and commit.** | none, can go now |
+
+B and C can run in parallel once A has landed, and that's the first batch worth orchestrating. F can go out now as a normal workorder. A needs a spec, so that comes next.
+
+## What's left to answer before A's spec
+
+1. **File name and location:** is it `mise.<name>.toml` (mise's own env naming, loaded with `MISE_ENV`), or `mise.skogai.toml` inside a `<name>/` directory? The first gets mise's layering for free. The second keeps a module's files together.
+2. **Where the intent prose goes:** a module used to have Markdown prose next to the frontmatter. Does that become a `<name>.md` beside the toml, `description` fields in the toml, or is it dropped?
+3. **`watches`:** is it in A's schema now (declared and checked, but not run), or left for later?
+
+Once you've answered those, I'll write A's spec, run it through the spec gate, and add A–F to `features.json`. Should I hand out F in the meantime?
+
+**Actions**
+
+- Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/mod; rm -rf "$S"; mkdir -p…`
+- Bash: `cd /tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/mod`
+- Bash: `rtk grep -n '^## \|^### ' .harness/context_summary.md`
+- Read `.harness/context_summary.md`
+- Edit `.harness/context_summary.md`
+- Edit `.harness/context_summary.md`
+- Bash: `rtk git add .harness/context_summary.md`
+- Bash: `rtk git commit -q -m "harness: record skogix's module model and config decisions`
+
