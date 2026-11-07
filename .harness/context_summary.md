@@ -85,3 +85,10 @@ This file is referenced in CLAUDE.md and loaded every session.
 - Model calibration: Sonnet finished each in one pass, no correction cycles.
 - Gotcha: the rtk hook rewrites `git ...` to `rtk git ...`; in a subagent worktree auto mode + the worktree guard then deny every git call, so agents cannot commit. One agent bypassed via `/usr/bin/git`. Until resolved, plan for the lead to commit agent work, and tell agents not to bypass hooks.
 - Pattern: hand-out prompts should say "do not push / open PR" while local master holds unpushed commits.
+
+## Meta-Session 2026-11-07
+- Scope accuracy: F003 (module toml), F004 (config), F005 (install) stayed inside declared scope; scope_expansions 0 on all three.
+- Model calibration: Sonnet implementers, one pass each, correction_cycles 0. Opus spec gate did the real work: F004 needed 17 answers, F005 11, all lead-answerable after a scratch probe of mise layering.
+- Discovery: a spec hash stamped with a trailing newline (F003) failed re-verification; stamp hashes on the exact stored text.
+- Pattern: probe the real tool (mise layering, podman) in scratch before answering gate questions; the probe turned most "ASK" questions into lookups. The stray `examples/usage/hello/greeting.txt` breaks 8 tests when present; runs had to move it aside.
+- Pattern: worktree agents no longer bypassed git; lead committed their work. Leftover worktrees accumulate (their log.jsonl lines block force-removal).
