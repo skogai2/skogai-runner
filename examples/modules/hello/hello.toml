@@ -1,5 +1,5 @@
 [env]
-SKOGAI_HELLO_GREETING = "{{ get_env(name='SKOGAI_HELLO_GREETING', default='hi') }}"
+SKOGAI_HELLO_GREETING = "{{ env.SKOGAI_HELLO_GREETING | default(value='hi') }}"
 
 [_.skogai.hello]
 description = "greet someone and keep the greeting in greeting.txt"
