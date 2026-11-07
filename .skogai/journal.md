@@ -977,3 +977,75 @@ No workers have been launched, because there is no verified feature to hand out 
 - Bash: `rtk git add .harness/context_summary.md`
 - Bash: `rtk git commit -q -m "docs: harness: record remake decisions for config`
 
+## 2026-11-07 22:51 · turn 5e9446a1
+
+**User**
+
+> /vv-harness:harness-orchestrate "then we can go on and start by mergeing claude.md into agents.md and claude.md only at-linking to agents.md then we go over every documentation written so far and clean up or sanity check it"
+
+**Assistant**
+
+skogix, the merge is done. The doc audit is running in the background, along with the mise research from before.
+
+**Merge (`6a06a71`, on `remake/config`)**
+- `CLAUDE.md` is now just `@AGENTS.md`.
+- `AGENTS.md` holds everything else:
+  - session start: the TODO import, the `wt step diff` line and the workorder routing
+  - a "Current state (2026-11-07)" section describing the remake
+  - commands that still work
+  - build principles, workorders, continuity, harness, git identity
+- I dropped all descriptions of the deleted code.
+- "The pieces" now says usage + mise is the interface, argc is no longer extended, and modules call each other. The old text still had argc as the interface and git config for settings.
+- I dropped CLAUDE.md's "(no SSH key)" claim, because SSH authenticates fine as `Skogix`.
+- **Unchecked:** I haven't confirmed that the `` !`wt step diff …` `` line still runs once it sits in an imported AGENTS.md instead of in CLAUDE.md. Codex and other non-Claude agents reading AGENTS.md will see it as plain text.
+
+**Doc audit: herdr didn't work, so I used subagents (you approved the switch)**
+- herdr refused to start a worker in every new pane, including a plain tab in this workspace. The error was `agent_pane_busy` ("not an available shell"), even though each pane showed an idle prompt. I haven't diagnosed it; my guess is herdr's shell detection.
+- The three slices run as Sonnet subagents instead, each in its own herdr worktree (base `6a06a71`):
+
+| Slice | Files | Branch |
+|---|---|---|
+| overview | `README.md`, `docs/{README,plan,design,why,history}.md` | `docs/audit-overview` |
+| concepts | `docs/{markdown-plus,declarations,argc-guide}.md`, `TODO.md`, `.skogai/TODO.md` | `docs/audit-concepts` |
+| workorders | `WORKORDERS.md`, `done/*` (one-line notes only), `best-version-so-far/{HANDOVER,TODO,docs/module}.md` (links and stale marks only) | `docs/audit-workorders` |
+
+- Each one fixes dead references and links, separates intended from implemented from verified, and cuts duplication with `AGENTS.md`. They don't delete files or settle open decisions; proposed deletions and open questions go into its report.
+- Reports land in `/tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-b9b0-df173714ecb6/scratchpad/docaudit/`.
+- **Not in the audit:** `.skogai/journal.md` (an append-only record), the upstream `docs/argc*/` snapshots, and `packaging/` (still installs the deleted `main.sh`).
+
+When the agents report, I'll review each diff against its slice and merge the clean ones into `remake/config`. Then I'll bring you the collected open questions and proposed deletions.
+
+**Actions**
+
+- Bash: `cd /home/skogix/skogai-runner; rtk git status -s; rtk ls docs .skogai .skogai/workorders/done best-version-so-far; rtk w…`
+- Read `AGENTS.md`
+- Read `CLAUDE.md`
+- Write `AGENTS.md`
+- Write `CLAUDE.md`
+- Bash: `rtk git add AGENTS.md CLAUDE.md`
+- Bash: `rtk git commit -q -m "docs: merge CLAUDE.md into AGENTS.md; CLAUDE.md only imports it`
+- Bash: `test "${HERDR_ENV:-}" = 1 && echo inside; herdr status 2>&1 | head -3; herdr integration status 2>&1 | head; herdr pane …`
+- Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-b9b0-df173714ecb6/scratchpad/docaudit; mkdir -p $S`
+- Bash: `herdr pane layout --pane "$HERDR_PANE_ID" 2>&1 | head -5; herdr worktree create --workspace "$HERDR_WORKSPACE_ID" --bran…`
+- Bash: `for s in concepts workorders; do herdr worktree create --workspace "$HERDR_WORKSPACE_ID" --branch docs/audit-$s --base 6…`
+- Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-b9b0-df173714ecb6/scratchpad/docaudit`
+- Bash: `herdr agent list | jq -c '.result.agents'; for p in w9B:p1 w9C:p1 w9D:p1; do herdr pane read $p --source visible 2>/dev/…`
+- Bash: `bash -c '`
+- Bash: `herdr pane read w9B:p1 --source visible 2>&1 | tail -15`
+- Bash: `herdr pane get w9B:p1 2>&1 | head -c 800; echo; herdr agent start --help 2>&1 | head -40`
+- Bash: `bash -c '`
+- Bash: `herdr agent explain w9B:p1 --json 2>&1 | head -c 1500; echo; herdr pane process --help 2>&1 | head -5; ps -o pid,comm,ar…`
+- Bash: `herdr --skill 2>/dev/null | grep -n -i -B2 -A6 "available shell\|pane_busy\|shell prompt" | head -50`
+- Bash: `bash -c '`
+- Bash: `bash -c '`
+- Bash: `herdr tab close w99:t4 >/dev/null 2>&1; herdr pane list --workspace "$HERDR_WORKSPACE_ID" | jq -c '.result.panes[]|{pane…`
+- AskUserQuestion
+- Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-b9b0-df173714ecb6/scratchpad/docaudit; for s in overvie…`
+- Read `/tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-b9b0-df173714ecb6/scratchpad/docaudit/overview.agent.txt`
+- Read `/tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-b9b0-df173714ecb6/scratchpad/docaudit/concepts.agent.txt`
+- Read `/tmp/claude-1000/-home-skogix-skogai-runner/85a17bf4-0c99-4408-b9b0-df173714ecb6/scratchpad/docaudit/workorders.agent.txt`
+- Agent: Audit overview docs
+- Agent: Audit concept docs
+- Agent: Audit workorder docs
+- Bash: `herdr pane send-keys w99:p6 ctrl+c >/dev/null 2>&1; herdr pane close w99:p6 2>&1 | head -c 200`
+
