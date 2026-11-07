@@ -618,3 +618,50 @@ Should I write the B and C specs now?
 - Bash: `bash /tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/pass-f003.sh && cat >> …`
 - Bash: `rtk git commit -q -m "harness: F003 passing; session handoff`
 
+## 2026-11-07 05:44 · turn 3a49c02b
+
+**User**
+
+> continue
+
+**Assistant**
+
+Both spec gates (F004 config, F005 install) are running in the background, and I'll answer their questions when they report.
+
+Everything so far is uncommitted: the two new entries and the F003 hash fix in `.harness/features.json`, and the mise layering notes in `.harness/context_summary.md`.
+
+One design choice in the F004 config spec changes how modules are written. A module's default must use `{{ env.K | default(value='hi') }}` rather than `get_env`; otherwise a module installed in the project would beat your global settings. F004 updates `hello.toml` and `docs/module.md` to match. In this version the checker doesn't enforce that form.
+
+Choices I made in the F005 install spec that you may want to change:
+- **Default install level:** global, with `--level system|local` as alternatives.
+- **Dependencies:** a module can only `depends_on` modules installed at its own level or a broader one (system is broadest, then global, then local).
+- **Same name at two levels:** refused (`duplicate-name`) rather than letting the more local one shadow the other.
+- **What gets copied:** only the toml. A module's task can't rely on files sitting next to it, such as `hello.sh`.
+- **Module tests:** if the module directory has `tests/*.bats`, they must pass before install.
+
+**Actions**
+
+- Bash: `rtk ls best-version-so-far/bin best-version-so-far && rtk grep -n "config" best-version-so-far/bin/skogai | head -80; rt…`
+- Bash: `grep -rn "hash" /skogai/claude/plugins/cache/vv-harness-marketplace/vv-harness/6.3.1/hooks/*.sh 2>/dev/null | grep -i "s…`
+- Write `/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/restamp-f003.sh`
+- Bash: `rtk read best-version-so-far/bin/skogai; rtk find best-version-so-far/modules -path '*config*' | head -30`
+- Bash: `bash /tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/restamp-f003.sh; rtk wc…`
+- Read `best-version-so-far/modules/core/argc.sh`
+- Bash: `/usr/bin/grep -n "^_[a-z_]*()\|^module::[a-z_]*()" best-version-so-far/modules/core/argc.sh`
+- Read `best-version-so-far/modules/core/argc.sh`
+- Read `best-version-so-far/modules/core/argc.sh`
+- Bash: `mise --version; mise set --help 2>&1 | head -40`
+- Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/mp; rm -rf "$S"; mkdir -p …`
+- Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/mp; cd "$S/p"`
+- Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/mp; cd "$S/p"`
+- Bash: `rtk read examples/modules/hello/hello.toml; /usr/bin/grep -n "get_env\|default" docs/module.md tests/module.bats | head …`
+- Bash: `bash -c '/usr/bin/jq ".features[] | select(.id==\"F003\") | del(.description,.notes)" .harness/features.json' > /tmp/cla…`
+- Read `/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/f003-shape.json`
+- Write `/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/f004.txt`
+- Write `/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/f005.txt`
+- Write `/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/add-f004-f005.sh`
+- Bash: `bash /tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/add-f004-f005.sh`
+- Agent: Spec gate F004 config
+- Agent: Spec gate F005 install
+- Edit `.harness/context_summary.md`
+
