@@ -83,3 +83,45 @@ I left two files alone because they aren't mine: the untracked `.skogai/journal.
 - Bash: `git -C /home/skogix/skogai-runner add docs/declarations.md`
 - Bash: `git -C /home/skogix/skogai-runner commit -m "docs: draft declarations, open decisions and pain points"`
 
+## 2026-11-07 08:15 · turn e3089291
+
+**User**
+
+> <task-notification>
+> <task-id>wipqo8rlg</task-id>
+> <tool-use-id>toolu_01SKu8Ds7K9L4BGhSDs92QSm</tool-use-id>
+> <output-file>/tmp/claude-1000/-home-skogix-skogai-runner--skogai-worktrees-a/eea8075f-3f0e-49c2-ac5f-9e47fb3a4cf6/tasks/wipqo8rlg.output</output-file>
+> <status>failed</status>
+> <summary>Dynamic workflow "Re-review an existing branch or diff scope: fan reviewers over it, dedup findings before an adversarial-verify pass, return ranked verdicts. Read-only; never edits, merges, or commits." failed: Error: review-branch: args did not parse to an object. Pass {scope, dimensions?, features?, conformance?, featureSpecs?} (JSON).
+>     at &lt;anonymous&gt; (workflow.js:112:9)
+>     at workflow.js:207:1259
+>     at runInContext (native)
+>     at fs (/$bunfs/root/chunk-y6p6zxbh.js:95:7239)
+>     at &lt;anonymous&gt; (/$bunfs/root/chunk-y6p6zxbh.js:96:10069)</summary>
+> <recovery>To resume after editing the script, call: Workflow({scriptPath: '/skogai/claude/projects/-home-skogix-skogai-runner--skogai-worktrees-a/eea8075f-3f0e-49c2-ac5f-9e47fb3a4cf6/workflows/scripts/review-branch-wf_1823b2f9-b8e.js', resumeFromRunId: 'wf_1823b2f9-b8e', args: "this worktree is a older update. could you see how much actually still fits and should be merged?"})
+> Agent transcripts: /skogai/claude/projects/-home-skogix-skogai-runner--skogai-worktrees-a/eea8075f-3f0e-49c2-ac5f-9e47fb3a4cf6/subagents/workflows/wf_1823b2f9-b8e</recovery>
+> <usage><agent_count>0</agent_count><agents_done>0</agents_done><agents_error>0</agents_error><agents_skipped>0</agents_skipped><agents_empty_result>0</agents_empty_result><subagent_tokens>0</subagent_tokens><tool_uses>0</tool_uses><duration_ms>8</duration_ms></usage>
+> </task-notification>
+
+**Assistant**
+
+Nothing on this branch needs merging. Master already has all of it, and what master doesn't have is now out of date.
+
+**What's on the branch:** one commit ahead of master, `a50596b docs: record the usage twins in harness and docs`. It touches four files and adds 27 lines, all docs and harness notes. Master is about 50 commits ahead (F003–F005, JSONL evidence, log reader, the usage-over-argc decision).
+
+**What I checked:**
+- **It's already on master.** Master has a commit with the same title, `b3b1ab9`, merged via PR #9. I compared every line this commit adds against master's copies of those files: all but one are already there, word for word.
+- **The one missing line is outdated.** It's the `docs/plan.md` "Current status" paragraph. This branch says the argc-vs-usage comparison has "no recorded criteria or decision yet". Master's version says usage + mise was chosen on 2026-11-06, the argc files are frozen, and step 3 (JSONL evidence, log reader) has started. Merging it would put the wrong status back.
+- **A merge would conflict.** A dry-run merge (`git merge-tree`) conflicts in all three files that differ: `.harness/claude-progress.txt`, `.harness/context_summary.md` and `docs/plan.md`. Resolving them would just mean taking master's side.
+
+**Recommendation:** don't merge. Drop branch `a`, or reset the worktree to `master` if you want to keep using it. I haven't done either, since both discard the commit; tell me if you want me to.
+
+I didn't run the full multi-agent review. It failed to start because it wanted its arguments as JSON, and fanning out reviewers over a 27-line docs diff that's already on master wouldn't have been worth the tokens.
+
+**Actions**
+
+- Bash: `cd /home/skogix/skogai-runner/.skogai/worktrees/a; git fetch -q 2>/dev/null; mb=$(git merge-base HEAD master); echo "mb=…`
+- Bash: `cd /home/skogix/skogai-runner/.skogai/worktrees/a; git patch-id < <(git show a50596b) ; git patch-id < <(git show b3b1ab…` (failed)
+- Bash: `cd /home/skogix/skogai-runner/.skogai/worktrees/a; git show a50596b --format= | grep '^+[^+]' | sed 's/^+//' | while IFS…`
+- Bash: `cd /home/skogix/skogai-runner/.skogai/worktrees/a; git show a50596b -- docs/plan.md | rtk grep '^[-+]The'; echo ---; git…`
+

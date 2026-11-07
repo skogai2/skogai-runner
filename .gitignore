@@ -10,3 +10,4 @@
 # F002 example output
 examples/hello/greeting.txt
 examples/usage/hello/greeting.txt
+/.skogai/logs/skogai-core/log.jsonl
