@@ -83,3 +83,69 @@ I left two files alone because they aren't mine: the untracked `.skogai/journal.
 - Bash: `git -C /home/skogix/skogai-runner add docs/declarations.md`
 - Bash: `git -C /home/skogix/skogai-runner commit -m "docs: draft declarations, open decisions and pain points"`
 
+## 2026-11-07 01:59 · turn 4709c833
+
+**User**
+
+> 1. i updated it to follow git-config syntax
+> 2. we can use mise only 
+> 3. overall i agree on most of the rest
+>
+> most important; check !`./best-version-so-far/bin/skogai config` in general as the better/end implementation
+
+**Assistant**
+
+I ran `best-version-so-far/bin/skogai config` against isolated system, global and local layers in `/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/bv`. It works as `docs/module.md` describes, and `skogai module test core` passes 45/45. Agreed: it's the better version, and the right target for config.
+
+## What it does
+
+It folds five layers, and a later layer wins:
+
+| # | layer | where | written by |
+|---|---|---|---|
+| 1 | module defaults | `config:` in each found `module.md` | the module author |
+| 2 | system | `/etc/skogai/config` (git-config) | admin |
+| 3 | global | `~/.config/skogai/config` | `config set --global` |
+| 4 | local | `.skogai/config` at the **git root** | `config set` |
+| 5 | module overrides | `module.local.md` | `config set --module` |
+| + | `--file x.md` and its `x.local.md` | frontmatter | `config set --file` |
+| + | env | `SKOGAI_<KEY>` | the caller |
+
+From the test run:
+- **Origin is always shown.** `runner.model` resolved to `local sonnet` over a global `opus`, and to `env:SKOGAI_RUNNER_MODEL haiku` when that variable was set.
+- **Module keys live under the module's name.** `memory.stale-days` comes from `module:memory`, then from `module:memory.local` after `set --module`. That write went to `.skogai/modules/memory/module.local.md`, never into the source.
+- **`module env runner` is the hand-off to a command.** It prints `SKOGAI_MODULE`, `SKOGAI_MODULE_DIR`, the absolute local and global dirs, and `SKOGAI_RUNNER_<KEY>` for each of the module's resolved keys. Commands read config only from that env, "never from `$PWD` or its own location".
+- **The local layer is anchored at the git root**, which fixes the "run from `~`, every layer missing" problem in the dash version. `files` lists every layer, including the missing ones.
+- **An unknown key is refused.** `get nope.key` exits 1 and lists the valid keys.
+
+## Why it fits the runner
+
+- **`module env` is how config would reach `run`.** `run` already executes the command in Podman with nothing from outside. Passing the module's resolved `SKOGAI_<NAME>_*` with `-e` would give the command its config with no access to the layer files, which is the "capabilities prepared for the workorder" idea.
+- **`config:` in `module.md` is the runner's `defaults:`.** It's the same Markdown+ idea, already implemented with a fold and origin.
+- **The search layers (local, global, source; first by name wins) match `SKOGAI_COMMANDS`.** Both put the nearest layer first.
+
+## What would have to change to bring it in
+
+1. **The interface:** it's argc, and argc is frozen in the runner. It needs a usage rewrite, `src/core/config/usage.sh`, with `effect="read"` on `get`, `list`, `env` and `files`.
+2. **sed and awk:** `_line`, `_module`, `_choice_*` use awk, and `_main` uses sed. The runner's core avoids both, and jq can do all of it.
+3. **Two module models:** best-version's `<name>/module.md` has `type, name, command, tools, requires, files, config`. The runner's `<name>.md` has the F001 keys `depends_on, reads, writes, owns, watches, defaults`. `requires` and `depends_on`, and `config` and `defaults`, mean the same thing under different names. This needs your decision before any port.
+4. **Types:** git-config values come back as strings, while `set --module` stores YAML values, so `7` becomes a number. The env lines flatten both to text anyway. If "strong types" applies to config, that needs a rule.
+5. **The env name collision is still there:** `-` is dropped, so `on-stop` and `onstop` become the same variable. It's harmless while best-version's names have no `-`, but the runner allows `-` in names.
+
+On your answers: **git-config syntax** matches best-version's layer files, so the format question is settled. **"mise only"** I take to mean the dash-skogai version, so it reads and writes through mise and not `git config`. Best-version uses mise for tools and tasks, and git-config files for config values. I'd keep that split for the runner unless you say otherwise.
+
+The next step I'd suggest is a `config-layers` workorder. It would port best-version's config to a usage script, use its `core.bats` config cases as the acceptance tests, and avoid sed and awk. A second workorder would then feed `module env` into `run`'s container. Both need item 3 settled first: should the runner's `defaults:` become `config:` and `depends_on` become `requires`, the other way around, or should one side map onto the other?
+
+**Actions**
+
+- Bash: `cd /home/skogix/skogai-runner/best-version-so-far && ./bin/skogai config 2>&1 | head -40; echo "exit=$?"; rtk ls bin mod…`
+- Bash: `rtk read bin/skogai; rtk grep -rn 'config' modules/core/module.md docs/module.md | head -30; rtk wc -l modules/*/argc.sh`
+- Read `best-version-so-far/docs/module.md`
+- Bash: `rtk grep -n '^# @\|^[a-z_:]*() {' modules/core/argc.sh | head -90`
+- Read `best-version-so-far/modules/core/argc.sh`
+- Bash: `rtk grep -n '^_[a-z_]*() {' -A 14 modules/core/argc.sh | rtk grep -A14 '_resolve()\|_layer_file()\|_local_dir()\|_line()…`
+- Read `best-version-so-far/modules/core/argc.sh`
+- Read `best-version-so-far/modules/core/argc.sh`
+- Bash: `S=/tmp/claude-1000/-home-skogix-skogai-runner/1974be71-5302-46f1-87a4-86a45f6197c7/scratchpad/bv; rm -rf "$S"; mkdir -p …`
+- Bash: `cd /home/skogix/skogai-runner/best-version-so-far && rtk ls modules/core/tests/; timeout 500 mise exec -- ./bin/skogai m…`
+
