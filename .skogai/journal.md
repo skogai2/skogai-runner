@@ -1236,3 +1236,23 @@ Understood, skogix. I've stopped the prep run and written nothing: no spec, no `
 
 I'm available for anything else, with or without the harness.
 
+## 2026-11-08 02:19 · turn 9f5f85f7
+
+**User**
+
+> Great, we will have to do this in overdrive. are you inside herdr?
+
+**Assistant**
+
+Probably not, skogix. Herdr is installed and running, but this session doesn't look like it's inside it.
+
+- **Herdr is running:** a `herdr server` process (pid 3544) and a `herdr` client (pid 17068) are both up, and the CLI is version 0.9.5.
+- **This session isn't inside it:** my shell has no `HERDR_*` environment variables, and the parent process is `claude`, which the Claude desktop app started. I'm also not in tmux or zellij.
+
+Since the server is up, I can still drive it from here with `herdr workspace`, `tab`, `pane` and `agent`, and `herdr api`. Do you want me to spawn agents in herdr panes for D, E and F in parallel? Which one do you want first?
+
+**Actions**
+
+- Bash: `env | rtk grep -i herdr; echo "---"; which herdr; echo "---"; rtk ps -o comm= -p $PPID; echo $TERM_PROGRAM $TMUX $ZELLIJ`
+- Bash: `pgrep -a herdr; herdr --version 2>&1 | head -3; herdr --help 2>&1 | head -30`
+
