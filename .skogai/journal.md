@@ -1287,3 +1287,56 @@ Separately, the harness startup hook flagged that `context_summary.md` is missin
 
 - Bash: `node /home/skogix/.config/Claude/local-agent-mode-sessions/998dc8af-7238-4e60-bb3d-3a0ab27bb128/b2d21adc-035a-4667-8118-…`
 
+## 2026-11-09 00:17 · turn 7de15d0c
+
+**User**
+
+> /vv-harness:harness-continue
+
+**Assistant**
+
+skogix, I've oriented. Nothing in the queue is ready to start, and the next step depends on a decision from you.
+
+**State**
+- On `master`, which is clean and matches `origin/remake/config` (that branch is already merged). There's one worktree and no untracked files.
+- Git identity matches `harness.json`, SSH authenticates as Skogix, and the smoke test passes.
+- Worker epoch check: the CLI moved from 2.1.312 to 2.1.319, 7 minors. That's under the threshold of 10, so no requalification is needed.
+- Features are at 0/5 passing. F001–F005 are all `blocked` because the remake replaced them, so there's nothing to claim.
+- `.skogai/workorders/open/` is empty. WORKORDERS.md still points at `run-workorder-link` and `src/core/contract/…`, but both were deleted in the remake, so that routing text is out of date.
+- Only `src/core/log/usage.sh` is left in `src/core`. `packaging/arch/PKGBUILD` still installs the deleted `main.sh`.
+
+**What's blocking**
+The config remake is waiting on your review of `.skogai/research/mise.md`. Its open question is which storage model to use for user values:
+- (a) `[vars]`, with `{default}` in modules
+- (b) `[env]`, with `{default}`
+- (c) per-machine `mise vars` answers
+- (d) typed `[_.skogai]`, with skogai doing the merge itself
+
+**My recommendation: (a) `[vars]`, without bridging values into `[env]`.** It fits the rules you've already set:
+- **Modules get config by calling each other, not through injected env.** `[vars]` values are never exported, so a module has to ask for them (`mise vars NAME`, or through a config module). (b) is env injection.
+- **Keys are strict and declared.** A module's `[vars] key = { default = … }` can serve as its declaration, and mise reports the source of each value natively.
+- **`config.*` can't be set from a file layer.** skogai can enforce this by refusing any file that sets `config.*` in `[vars]`.
+
+Costs of (a):
+- Var names are case-sensitive against the caller's env. You'd need to decide whether names stay lowercase (`hello_greeting`) or become the `SKOGAI_*` names.
+- `mise vars --json` doesn't exist in the installed mise 2026.10.17, so we'd either parse `mise vars ls` or pin mise ≥ 2026.11.x with `min_version`.
+- A plain value in a user layer beats the caller's env, and the only way around that is a template trick.
+
+(d) gives full control, but it means writing our own merge, which goes against "extend existing tools".
+
+**What I need from you**
+1. Which storage model: a, b, c or d, or none of them?
+2. If (a): lowercase var names or `SKOGAI_*`?
+3. Should I also refresh the stale routing in WORKORDERS.md and the PKGBUILD reference to `main.sh`? That's a docs and packaging change, so I'm asking before I make it.
+
+Once you've decided, I'll write it up as F006 with a spec, run it through the spec gate, and implement it with TDD.
+
+**Actions**
+
+- Bash: `git status -s && git branch --show-current && git branch -a | head -20 && ssh -T git@github.com 2>&1 | head -2; ./.harne…`
+- Bash: `jq '.worker // "none", .git_identity' .harness/harness.json; jq -r '.features[] | "\(.id) \(.status) \(.description[0:80…`
+- Bash: `cat .todo.md; echo ---; cat .skogai/journal.md; echo ---; ls src/core src/core/*; ls .skogai/research; cat .skogai/worko…`
+- Bash: `ls src/core src/core/* ; ls .skogai/research; sed -n 1,40p .skogai/workorders/WORKORDERS.md; ls .skogai/workorders/done …`
+- Bash: `git worktree list; grep -n "^## \|Open question\|Decision needed\|Recommend" .skogai/research/mise.md | head -30`
+- Bash: `sed -n 13,33p .skogai/research/mise.md; sed -n 263,400p .skogai/research/mise.md`
+
