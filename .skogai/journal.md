@@ -1224,3 +1224,15 @@ Once I have the spec, I'll run it through spec-verification and take you through
 
 - Bash: `python3 - <<'PYEOF'`
 
+## 2026-11-08 02:15 · turn 2e8dcc57
+
+**User**
+
+> yeah the harness is too slow right now so leave it
+
+**Assistant**
+
+Understood, skogix. I've stopped the prep run and written nothing: no spec, no `features.json` change, and no prep record.
+
+I'm available for anything else, with or without the harness.
+
