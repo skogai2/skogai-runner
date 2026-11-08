@@ -15,3 +15,4 @@ examples/usage/hello/greeting.txt
 /graft/.cache
 /.skogai/logs/skogai-core/log.jsonl
 /.skogai/logs/skogai-core/log.jsonl
+/.skogai/logs/skogai-core/log.jsonl
