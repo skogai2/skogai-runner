@@ -1203,3 +1203,24 @@ AGENTS.md describes the older remake of every module from the ground up (config 
 
 Do you want one of D, E or F, the loose-end cleanup, or something else? I'll present a plan and wait for your go-ahead before starting.
 
+## 2026-11-08 02:13 · turn df5f33bf
+
+**User**
+
+> /vv-harness:harness-issue-prep
+
+**Assistant**
+
+skogix, there's no `prep` key in `.harness/harness.json`, so prep runs in **local-only mode**. That means the result goes to `features.json` only, with no readiness stamp, no Linear label and no kickstart.
+
+You gave no argument, so I'm in paste mode and need two things from you:
+
+1. **The spec to verify.** Paste the text, or give me a feature id (`F0NN`) to load from `features.json`. The planned next work was D (run injects module env), E (`depends_on` = installed, plus `hello-reader`) and F (`run-workorder-link`). None of those has a feature entry yet. Do you want one of them turned into a verified spec?
+2. **The destination.** Should the normalized spec become a new or updated feature in `features.json`, or a Linear issue you'll paste the result into by hand?
+
+Once I have the spec, I'll run it through spec-verification and take you through any open questions.
+
+**Actions**
+
+- Bash: `python3 - <<'PYEOF'`
+
