@@ -4,7 +4,9 @@ Persistent record of architectural decisions, discovered patterns, gotchas, and 
 This file is referenced in CLAUDE.md and loaded every session.
 
 ## Active Context
-- **2026-11-07 remake (branch `remake/config`, not merged):** skogix ordered every module rebuilt from the ground up, config first. Deleted: config, module install, run, contract (usage + argc), main.sh, main-usage.sh, their tests/fixtures/examples/docs (last state at 2913d23). Kept: `src/core/log/`. F001-F005 are `blocked` as superseded. The lines below describe the deleted state; it is history now.
+- **Settings = plain env (skogix, 2026-11-09):** every setting is `SKOGAI_<NAME>`, declared by the script that reads it on a usage flag (`flag "--x <v>" env="SKOGAI_X"`). Precedence: usage default < env (caller or mise `[env]` layer) < flag. No skogai config command or file format yet; "get something rolling asap". This supersedes, for now, the 2026-11-07 answers below that modules get config by calling each other and that storage waits on the mise research; the strict-declared-keys and `config.*` reserved-section ideas are parked, not dropped.
+- **argc retired everywhere live (skogix, 2026-11-09):** argc removed from mise.toml and PKGBUILD; AGENTS.md, docs, WORKORDERS.md point at usage. History (done workorders, progress, journal, `best-argc-version/`, `docs/argc*`) left as-is. `best-version-so-far/` was renamed `best-argc-version/` (87b85e9); the smoke test's exclude still named the old path until 2026-11-09, so it had been scanning the archive (passed anyway).
+- **2026-11-07 remake (merged to master):** skogix ordered every module rebuilt from the ground up, config first. Deleted: config, module install, run, contract (usage + argc), main.sh, main-usage.sh, their tests/fixtures/examples/docs (last state at 2913d23). Kept: `src/core/log/`. F001-F005 are `blocked` as superseded. The lines below describe the deleted state; it is history now.
 - Config remake answers (skogix 2026-11-07): the old one was wrong in storage model (no mise `[env]` get_env templates), key model, and in being built feature-first instead of from definitions. Keys are strict and declared: anything can declare a key, a module may use only keys it declared; declaration format is "any key-value form for now". Control vars live in a reserved `config.*` section (`config.global` -> `SKOGAI_CONFIG_GLOBAL`), never settable from a file layer. Modules get config by calling each other (not env injection). Storage is undecided until the mise deep-research pass (`.skogai/research/mise.md`); skogix rejected deciding it (git config -f was proposed) without that research.
 - Steps 1-2 done (F001 checker, F002 staged Podman run). usage + mise is the interface; argc twins frozen (2026-11-06).
 - Landed 2026-11-06: run events (`docs/evidence.md`), live-test examples (`tests/examples.bats`), `mise run test` on usage. Next: a second module that `depends_on` hello; step 3 leftovers (recovery, reader, workorder link).
@@ -12,14 +14,14 @@ This file is referenced in CLAUDE.md and loaded every session.
 - Not implemented: the workorder lifecycle through the runner (agents still edit the repo directly), `depends_on` at run time, run using a module's mise env.
 
 ## Cross-Cutting Concerns
-- Stack: bash + argc, tests in bats, tools managed via mise (`latest`, not pinned) (argc, jq, yq, bats); Arch container (`mise run test:container`) and PKGBUILD in `packaging/arch/`
-- Intended architecture: skogai-runner will provide the single entrypoint for skogai 3.0 init/setup/bootstrap/install. `src/core/` holds system-level modules (think /etc/skogai, /usr/share/skogai); `.skogai/` is userspace / local override. argc is the interface for both user and agents.
+- Stack: bash + usage, tests in bats, tools managed via mise (`latest`, not pinned) (usage, jq, yq, bats); Arch container (`mise run test:container`) and PKGBUILD in `packaging/arch/`
+- Intended architecture: skogai-runner will provide the single entrypoint for skogai 3.0 init/setup/bootstrap/install. `src/core/` holds system-level modules (think /etc/skogai, /usr/share/skogai); `.skogai/` is userspace / local override. usage is the interface for both user and agents.
 - Key constraints: lowercase single-segment names; no sed/awk in the core template; trust existing tools (pacman, git, mise) instead of reinventing.
 
 ## Domain: core runner
 
 ### Decisions
-- bash + argc chosen: argc gives one declarative CLI surface (help, completion, parsing) usable by humans and agents alike (2026-10-29)
+- bash + argc chosen (2026-10-29); superseded by usage + mise (2026-11-06), argc retired from live surfaces (2026-11-09)
 - `best-version-so-far/` contains active module plans and reusable implementation. Foundation work comes first; tasks may reuse it deliberately. `agents/` and `docs/argc*` also contain reference material. Earlier validation claims need rechecking (clarified 2026-10-29)
 
 - F001 is the relationship contract checker only (spec-gated 2026-10-30). Invalid input is a verdict (JSONL on stdout, exit 0); exit 2 bad args, exit 1 missing yq/jq. Old proposals (split main.sh, .skogai override, single binary) deferred per docs/plan.md (2026-10-30)
@@ -43,7 +45,7 @@ This file is referenced in CLAUDE.md and loaded every session.
 - Evidence starts from the skogai-core hook log shape (`/home/skogix/skogai/.skogai/logs/skogai-core/log.jsonl`: `{ts, event, action?, input}`), extended with run identity and outcome, not a new format (2026-11-06).
 
 ### Patterns
-- Tests isolate HOME under `$BATS_TEST_TMPDIR` and drive the template via `argc --argc-run`.
+- Tests isolate HOME under `$BATS_TEST_TMPDIR` and run scripts under `usage bash`.
 
 ### Gotchas
 - Rootless podman finds its images through XDG_DATA_HOME (default $HOME/.local/share). Tests that isolate HOME must capture and export XDG_DATA_HOME first, or `podman image exists` fails. This host exports XDG_DATA_HOME already, which hides the problem.
@@ -52,7 +54,6 @@ This file is referenced in CLAUDE.md and loaded every session.
 - A script reached through a registry symlink must `realpath` `BASH_SOURCE` before locating siblings (fixed in run/usage.sh, 9e82212). The tests copy `examples/usage/hello` whole, so a gitignored `greeting.txt` from a real run breaks 8 tests.
 - Never write a file from `jq ... > file` in the Bash tool: a hook rewrites `jq` (even `/usr/bin/jq`) to `rtk jq`, which shortens long strings with `...`. This corrupted features.json once (2026-11-07, restored from git). Put the jq call in a script file and run `bash script.sh`.
 - Workorder agents in worktrees under ~/skogai-runner/.claude/worktrees: a hook refuses plain `git` (rtk wrapper); they used `/usr/bin/git`. `mise tasks` there also picks up the parent checkout's mise.toml.
-- `mise run test` stays on argc for the twinned files; `mise run test:usage` runs contract.bats and run.bats with `CONTRACT_IMPL=usage RUN_IMPL=usage` plus main-usage.bats. Both suites must pass after a twinned change.
 - `contract/usage.sh` receives the variadic `file` as one shell-quoted string (`eval "files=(...)"`); under a usage mount, `usage_cmd` is the mounted script's `bin`, so main-usage.sh dispatches on argv.
 - `mise run test` now depends on `mise run image` (cached `podman build`, a no-op without podman).
 - No coverage tooling for bash/bats yet: the 95% coverage gate cannot be measured. `full_test` runs `bats tests` only. Enabling coverage (e.g. bashcov/kcov) needs its own feature if wanted.
@@ -94,3 +95,13 @@ This file is referenced in CLAUDE.md and loaded every session.
 - Discovery: a spec hash stamped with a trailing newline (F003) failed re-verification; stamp hashes on the exact stored text.
 - Pattern: probe the real tool (mise layering, podman) in scratch before answering gate questions; the probe turned most "ASK" questions into lookups. The stray `examples/usage/hello/greeting.txt` breaks 8 tests when present; runs had to move it aside.
 - Pattern: worktree agents no longer bypassed git; lead committed their work. Leftover worktrees accumulate (their log.jsonl lines block force-removal).
+
+## Meta-Session 2026-11-09
+- Scope: no feature work. Orientation only; a harness-issue-prep run was started and stopped at skogix's request (harness too slow right now), nothing written.
+- Discovered: herdr 0.9.5 is installed and its server runs, but Claude Code sessions started from the desktop app have no `HERDR_*` env, so the herdr worker mode is not offered.
+- Gotcha: `ssh -T git@github.com` fails (no key); the remote is HTTPS, so the harness identity check by ssh does not apply. `git_identity.ssh_host` records the https remote.
+
+## Meta-Session 2026-11-09
+- Scope: orientation found nothing claimable (F001-F005 blocked, queue empty); the session became decision capture (config = plain `SKOGAI_*` env) and an argc-to-usage sweep of live docs, packaging and tooling. No feature code.
+- Discovered: a directory rename (best-version-so-far -> best-argc-version) silently broke the smoke test's exclude path; the gate kept passing, so nothing flagged it. Grep path literals after a rename.
+- Transfer: when the next step is blocked on a user decision, surface it with a recommendation in the first reply instead of starting speculative work.

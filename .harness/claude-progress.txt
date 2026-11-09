@@ -67,3 +67,11 @@
 - Checks on merged master: mise run test 201 ok 0 not ok (1 skip), test:argc 41/41, smoke clean (stray greeting.txt moved aside for the run, restored).
 - Lead defaults skogix may revisit: install default level global; duplicate names refused across levels (no shadowing); only the toml is copied; get of an unset key is exit 3; set refuses quotes/backslash/control chars/template delimiters.
 - Next: D (run injects module env), E (depends_on = installed, hello-reader), F (run-workorder-link). Leftover worktrees: session 5's three, agent-a2bba50ed427d5c10 (F003), agent-adc7775bb9ed3a60f (F004), agent-af16147b0e7ae30ba (F005), each with only agent log.jsonl lines uncommitted.
+
+## Session 7 - 2026-11-09
+- Feature: none claimable (F001-F005 blocked as superseded by the remake; workorder queue empty).
+- Decisions (skogix): settings are plain SKOGAI_* env vars declared on usage flags; argc retired from every live surface.
+- Done: argc dropped from mise.toml and PKGBUILD (PKGBUILD now installs src/core/log/usage.sh, depends on usage; skogai-runner.install removed); AGENTS.md, docs/{design,plan,README,declarations}.md, WORKORDERS.md, .skogai/TODO.md, init.sh updated; smoke exclude fixed to best-argc-version/.
+- Tests: bats tests 13/13, smoke clean. Coverage n/a (no bash coverage tooling).
+- Next: spec a first rebuilt module on usage + SKOGAI_* env (contract checker or staged run), as F006.
+- Blockers: none.
