@@ -1412,3 +1412,60 @@ Which do you want?
 - Bash: `ls -la .claude .claude/rules 2>&1 | head -30; echo ---; cat CLAUDE.md; echo ---; ls; echo ---; ls src src/core tests 2>&…`
 - Read `/home/skogix/.config/Claude/local-agent-mode-sessions/998dc8af-7238-4e60-bb3d-3a0ab27bb128/b2d21adc-035a-4667-8118-e56de76859af/rpm/plugin_013vS1QT7krU2AnugjDYVYWj/standards/instruction-files.md`
 
+## 2026-11-09 06:28 · turn dac34581
+
+**User**
+
+> 1. we can begin with simple envs everywhere to get something rolling asap
+> 2. set SKOGAI_-envs
+> 3. please update everything to use the usage implementations instead of argc
+
+**Assistant**
+
+skogix, all three are in: config is now plain `SKOGAI_*` env vars, and argc is gone from everything live. It's two commits on the local branch `chore/usage-everywhere`, not pushed. The 13 bats tests and the smoke test both pass.
+
+**1 + 2: config is plain env vars**
+- AGENTS.md has a new **Settings** section. Every setting is a `SKOGAI_<NAME>` variable, declared by the script that reads it on a usage flag (`flag "--log <file>" env="SKOGAI_LOG"`), so it shows up in that script's help.
+- Later wins: the usage default, then the env (yours, or a mise `[env]` layer), then the flag. Persistent values go in mise `[env]` at any layer. `src/core/log/usage.sh` already works this way.
+- This conflicts with the earlier rule that modules get config by calling each other, not through env. I've recorded that rule as overridden for now in `context_summary.md`, and parked strict declared keys and the reserved `config.*` section rather than dropping them.
+
+**3: argc → usage**
+- **`mise.toml`:** argc is no longer a tool.
+- **`packaging/arch/PKGBUILD`:** it depended on argc and installed the deleted `main.sh`. It now depends on usage and installs `src/core/log/usage.sh`. `skogai-runner.install` only printed argc instructions, so I deleted it.
+- **Docs:** `AGENTS.md`, `docs/design.md`, `docs/plan.md`, `docs/README.md` and `docs/declarations.md` now describe usage. I also removed links to files that no longer exist (`runner.md`, the root README).
+- **`WORKORDERS.md`:** it pointed at the deleted contract checker and runner. It now says to check the queue by hand until those are rebuilt.
+- **Left as history:** done workorders, the progress log, the journal, `best-argc-version/` and the `docs/argc*` snapshots. `docs/argc-guide.md` is marked as describing the retired interface.
+
+**Smoke test bug, now fixed:** `.harness/init.sh` still excluded `best-version-so-far/`, which was renamed to `best-argc-version/` in `87b85e9`. Since then the smoke test has been checking the argc archive too. It passed anyway, so nothing flagged it.
+
+**Your hook's commits:** skogai-core added three `journal and log` commits on this branch while I worked. They're yours, so I left them.
+
+I'd suggest F006 next: rebuild the contract checker or the staged run on usage, with `SKOGAI_*` env settings. Tell me which to start with, and whether to push the branch and open a PR.
+
+**Actions**
+
+- Bash: `git grep -n -i argc -- ':!best-version-so-far' ':!docs/argc' ':!docs/argc-completions' ':!.skogai/logs' ':!.skogai/journ…`
+- Bash: `cat mise.toml; echo ----; cat packaging/arch/PKGBUILD packaging/arch/skogai-runner.install; echo ----; git grep -n -i ar…`
+- Read `AGENTS.md`
+- Read `.harness/context_summary.md`
+- Read `.skogai/workorders/WORKORDERS.md`
+- Bash: `python3 - <<'EOF'`
+- Bash: `python3 - <<'EOF'`
+- Bash: `sed -n 48,60p docs/design.md; echo ----; sed -n 1,9p docs/plan.md; sed -n 38,50p docs/plan.md; echo ---; sed -n 1,14p do…`
+- Bash: `ls README.md docs/runner.md 2>&1; git grep -n "best-version-so-far" -- ':!best-argc-version' ':!.skogai/logs' ':!.skogai…`
+- Bash: `python3 - <<'EOF'`
+- Bash: `python3 - <<'EOF'`
+- Bash: `mise exec -- bats tests 2>&1 | grep -c "^ok"; mise exec -- bats tests 2>&1 | grep "not ok" ; bash -n packaging/arch/PKGB…`
+- Bash: `cat >> .harness/claude-progress.txt <<'EOF'`
+- Bash: `git commit -q -m "docs: harness notes for session 7 (env settings, argc retired)`
+- Bash: `git branch --show-current; git log --oneline -6 --stat | cut -c1-100`
+- Bash: `git commit -q -m "docs: harness notes for session 7 (env settings, argc retired)`
+- Bash: `git add .harness/context_summary.md .harness/claude-progress.txt .harness/mld/2026-11-09-c02cb594.md`
+- Bash: `git commit -q -m "docs: harness notes for session 7 (env settings, argc retired)`
+- Bash: `git log --oneline -4 && git status -s`
+- Bash: `git reset -q 15c5bd4 && git add AGENTS.md docs mise.toml packaging .skogai/TODO.md .skogai/workorders/WORKORDERS.md .har…`
+- Bash: `git commit -q -m "usage everywhere: retire argc from tooling, packaging and docs" -m "Settings are plain SKOGAI_* env va…`
+- Bash: `git add .harness/context_summary.md .harness/claude-progress.txt .harness/mld/2026-11-09-c02cb594.md`
+- Bash: `git commit -q -m "docs: harness notes for session 7 (env settings, argc retired)" -m "Co-Authored-By: Claude Opus 5.5 <n…`
+- Bash: `git log --oneline -4 --stat | cut -c1-80 | head -24; git status -s`
+
