@@ -1373,3 +1373,42 @@ Since you said the harness is too slow, I'd suggest D, E or F as a plain single-
 - Read `.harness/context_summary.md`
 - Edit `.harness/context_summary.md`
 
+## 2026-11-09 06:04 · turn 96bb579c
+
+**User**
+
+> /meta-dev:setup-instructions
+
+**Assistant**
+
+skogix, I haven't written anything. `setup-instructions` is for repos with no instruction layout, and this one already has one, so the skill would overwrite it.
+
+**What exists**
+- `AGENTS.md` is a detailed, hand-written file with no code map. It carries area-specific rules for tests, `.harness/` and packaging.
+- `CLAUDE.md` is the single line `@AGENTS.md`.
+- `.claude/rules/` does not exist.
+
+**Recommendation:** keep your `AGENTS.md` and add only the scoped layer. I'd draft three small rules and move the area-specific lines out of `AGENTS.md`, since the skill's standard says each fact lives in one place.
+
+| Rule | `paths:` | Skills | Keepers moved out of `AGENTS.md` |
+|---|---|---|---|
+| `shell-core.md` | `src/**/*.sh` | none apply (drop `bitwize-music`, `cloudflare:*`, which don't match this code) | no sed/awk in core scripts; names match `^[a-z][a-z0-9-]*$`; `#USAGE` comments under `usage bash`; stdout is machine-readable, stderr is diagnostics |
+| `tests.md` | `tests/**` | apply `superpowers:test-driven-development` when adding a test | `HOME` and tool paths go under `$BATS_TEST_TMPDIR`; mise tests use `env -i` plus `MISE_*` dirs; run-event tests isolate `XDG_STATE_HOME` and unset `SKOGAI_LOG`; system `yq` may not be mikefarah's |
+| `packaging.md` | `packaging/**` | none (surface: when the entrypoint form is decided, update the PKGBUILD) | the PKGBUILD still installs the deleted `src/core/main.sh` |
+
+I'd leave the `.harness/` bookkeeping lines in `AGENTS.md`, because the hooks already enforce them and they apply everywhere. I'd also flag two `AGENTS.md` problems for you to decide on:
+- **Stale state:** `Current state (2026-11-07)` is a fast-changing status block, which the standard says belongs in the tracker or a branch note, not in `AGENTS.md`.
+- **Hand-edited notes:** line 8 points agents at `TODO.md` files you edit by hand. The standard treats those as your notes, not agent input.
+
+Separately, the session-start hook says the last session never wrote its `## Meta-Session 2026-11-09` retrospective in `context_summary.md`. I'll handle that before other new work.
+
+Which do you want?
+1. **Go ahead:** I write the three rules and trim `AGENTS.md` to match.
+2. **Rules only:** I write the three rules and leave `AGENTS.md` as is, which leaves some duplicated facts.
+3. **Nothing:** skip this and do the retrospective only.
+
+**Actions**
+
+- Bash: `ls -la .claude .claude/rules 2>&1 | head -30; echo ---; cat CLAUDE.md; echo ---; ls; echo ---; ls src src/core tests 2>&…`
+- Read `/home/skogix/.config/Claude/local-agent-mode-sessions/998dc8af-7238-4e60-bb3d-3a0ab27bb128/b2d21adc-035a-4667-8118-e56de76859af/rpm/plugin_013vS1QT7krU2AnugjDYVYWj/standards/instruction-files.md`
+
