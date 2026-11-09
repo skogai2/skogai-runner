@@ -17,7 +17,7 @@ The earlier plans below remain active. Establish the basics first, then grow sma
 
 - [ ] quick history and background of skogai3.0
 - [ ] define a list of reasons / the intentions behind what looks like yet another command runner
-- [ ] go over the argc functionality and how it is used as the interface for both the user and agents
+- [ ] go over the usage functionality and how it is used as the interface for both the user and agents
 - [ ] intended packaging: a single entrypoint for init/setup/bootstrap/installation; decide its final form after the basic contracts are proven. /core/<modules> contains the core/system functionality and definitions which can be seen as the "/etc/skogai,/usr/share/skogai" and so on. lastly .skogai/ would represent the userspace, home folder or local override.
 - [ ] starting point; for now the old style of {DECISIONS,PLAN,AGENTS,RULES,DEFINITIONS,CONCEPTS}.md etc can be the starting setup to prove a point and then essentially implement each concept along the way
 - [ ] starting point; take the current core and break it down into its atomic parts - forcing us to split up and re-create basic things from the ground up by definitions

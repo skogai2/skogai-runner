@@ -3,16 +3,15 @@
 pkgname=skogai-runner-git
 pkgver=r40.be9c9cb
 pkgrel=1
-pkgdesc='skogai main runner: one argc for every registered command file'
+pkgdesc='skogai core: usage scripts for the skogai runner'
 arch=(any)
 url='https://github.com/skogai2/skogai-runner'
 license=(unknown)
-depends=(argc bash jq)
+depends=(usage bash jq)
 makedepends=(git)
 checkdepends=(bats)
 provides=(skogai-runner)
 conflicts=(skogai-runner)
-install=skogai-runner.install
 source=("skogai-runner::git+file://${startdir%/packaging/arch}")
 sha256sums=(SKIP)
 
@@ -28,5 +27,5 @@ check() {
 
 package() {
     cd skogai-runner
-    install -Dm644 src/core/main.sh "$pkgdir/usr/share/skogai/core/main.sh"
+    install -Dm755 src/core/log/usage.sh "$pkgdir/usr/share/skogai/core/log/usage.sh"
 }

@@ -5,30 +5,34 @@ Get the absolute basics dependable, then build small, self-sustaining modules. T
 ## Session start
 
 - Read `.harness/context_summary.md` (decisions, gotchas). [The vision](docs/design.md) and [the plan](docs/plan.md) hold the foundation-first sequence.
-- @.skogai/TODO.md contains one-line descriptions of tasks to be done. [TODO.md](TODO.md) and [best-version-so-far/TODO.md](best-version-so-far/TODO.md) retain the wider backlog.
+- @.skogai/TODO.md contains one-line descriptions of tasks to be done. [TODO.md](TODO.md) and [best-argc-version/TODO.md](best-argc-version/TODO.md) retain the wider backlog.
 - !`wt step diff -- --cached > .skogai/tmp/wt-git-diff-cached` generates the file @.skogai/tmp/wt-git-diff-cached to show the user's staged changes. Treat it as proposed changes, to be considered together with the user's message.
 - Continuing work goes through [.skogai/workorders/WORKORDERS.md](.skogai/workorders/WORKORDERS.md). In the lead session, check the queue there and hand out `open/` workorders to agents. If you were given a workorder, implement only that one, inside its `owns`.
 
-## Current state (2026-11-07)
+## Current state (2026-11-09)
 
-Every module is being remade from the ground up, config first (branch `remake/config`). Config, module install, run, the contract checker (usage and argc versions), `main.sh` and `main-usage.sh` were deleted with their tests, examples and docs; their last state is commit `2913d23`. What remains is `src/core/log/usage.sh` (the read-only reader of the run event log) and its test. `packaging/arch/PKGBUILD` still installs the deleted `src/core/main.sh`.
+Every module is being remade from the ground up, config first. Config, module install, run, the contract checker (usage and argc versions), `main.sh` and `main-usage.sh` were deleted with their tests, examples and docs; their last state is commit `2913d23`. What remains is `src/core/log/usage.sh` (the read-only reader of the run event log) and its test.
 
-Decisions for the config remake are in `.harness/context_summary.md` (Active Context). Config storage is undecided until the mise research in `.skogai/research/mise.md` is reviewed.
+Config is plain environment variables for now (skogix, 2026-11-09): see *Settings* below. Decisions for the remake are in `.harness/context_summary.md` (Active Context).
 
 ## The pieces
 
-- **usage + mise** are the interface (skogix, 2026-11-06). Scripts declare their CLI in `#USAGE` comments and run under `usage bash`; usage provides parsing, help, completion and `effect` metadata for agents (`usage mcp`). argc was the earlier interface; it is no longer extended.
-- **mise** provides the development environment, dependencies, and tasks. Modules call each other rather than receiving injected environment. Give each setting a clear owner and precedence.
+- **usage + mise** are the interface (skogix, 2026-11-06). Scripts declare their CLI in `#USAGE` comments and run under `usage bash`; usage provides parsing, help, completion and `effect` metadata for agents (`usage mcp`). argc was the earlier interface; it is retired. Don't write new argc code; the argc material in `best-argc-version/` and `docs/argc*` is reference only.
+- **mise** provides the development environment, dependencies, and tasks.
+
+## Settings
+
+Every setting is an environment variable named `SKOGAI_<NAME>` (skogix, 2026-11-09). The script that reads it declares it on a flag, `#USAGE flag "--log <file>" env="SKOGAI_LOG"`, so usage's help lists it. Precedence, later wins: the usage `default`, the env (the caller's, or a mise `[env]` layer), the flag. Set persistent values in a mise `[env]` table at any mise layer (system, global, project, `mise.local.toml`). There is no config command or config file format of skogai's own yet; this is the simplest thing that runs and may be replaced once the [mise research](.skogai/research/mise.md) settles storage.
 - **Markdown+** makes intent and relationships programmable. A module starts as a Markdown file: prose describes intent; typed frontmatter declares dependencies, ownership, reads, writes, watches, and defaults. Add behavior as those declarations acquire precise meanings.
 
 ## Commands
 
-Tools come from `mise.toml` (argc, usage, jq, yq, bats, all `latest`): `mise install`. Run checks through mise (`mise run test`, `mise exec -- bats ...`). The system `yq` may be a different program from mikefarah's yq.
+Tools come from `mise.toml` (usage, jq, yq, bats, all `latest`): `mise install`. Run checks through mise (`mise run test`, `mise exec -- bats ...`). The system `yq` may be a different program from mikefarah's yq.
 
 - `mise run test`: the whole Bats suite (`bats tests`)
 - `mise run test:container`: the same suite in a clean Arch container via Podman (the repo is mounted read-only at `/repo`)
 - `bats tests/<file>.bats`, `bats -f '<regex>' tests/<file>.bats`: one file, or tests whose name matches
-- `.harness/init.sh smoke_test`: `bash -n` on tracked scripts, plus `shellcheck -S error` when installed. `best-version-so-far/` and `docs/` are excluded
+- `.harness/init.sh smoke_test`: `bash -n` on tracked scripts, plus `shellcheck -S error` when installed. `best-argc-version/` and `docs/` are excluded
 - `.harness/init.sh focused_test <file>` / `full_test`: the harness's single-file and full runs
 
 Tests set `HOME` and every tool path under `$BATS_TEST_TMPDIR`. A test that touches mise isolates it with `env -i` plus `MISE_*` dirs under the test's tmp dir. A test that writes run events isolates `XDG_STATE_HOME` and unsets `SKOGAI_LOG`.
@@ -56,7 +60,7 @@ This lifecycle is a goal, not an implemented guarantee. Until tooling enforces i
 
 ## Continuity
 
-`best-version-so-far/` is the earlier module-based design (`bin/skogai`, `modules/`, `HANDOVER.md`). It contains active design and reusable implementation work; it is not superseded, but `bats tests` doesn't run it. Revalidate behavior and old test claims before reuse. `docs/argc/` and `docs/argc-completions/` are upstream reference snapshots of unknown revision; check the pinned links in `docs/argc-guide.md` before relying on version-sensitive argc behavior.
+`best-argc-version/` is the earlier argc module-based design (`bin/skogai`, `modules/`, `HANDOVER.md`). It contains active design and reusable implementation work; it is not superseded as design, but it is argc code: port behavior to usage rather than running it, and `bats tests` doesn't run it. Revalidate behavior and old test claims before reuse. `docs/argc/` and `docs/argc-completions/` are upstream reference snapshots of unknown revision; they document the retired argc interface.
 
 Extend existing concepts before introducing another framework. When a contract is unclear, write the smallest concrete example and record the unresolved decision.
 

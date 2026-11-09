@@ -14,12 +14,11 @@ These are hand-prepared workorders, not the [step 2 lifecycle](../../docs/plan.m
 
 - `open/*.md`: ready to hand out. Every file in this folder can run in parallel with the others.
 - `done/*.md`: finished. The lead moves a workorder here in the same change that lands its PR.
-- Next (`log-partial-line` and `log-reader` have landed): a `run-workorder-link` workorder, so events name the workorder and commit they belong to. It owns `src/core/run/usage.sh`.
-- After that: a `hello-reader` example that `depends_on` hello and reads its `greeting.txt`. This needs `depends_on` to work at run time and settles the path-base question below, so it waits until then. The staged runner (`src/core/run/usage.sh`) still isn't used for handing out workorders: agents edit the repo directly.
+- Next: nothing queued. The remake (2026-11-07) deleted the runner (`run/usage.sh`) and the contract checker (`contract/usage.sh`); `run-workorder-link` and `hello-reader` wait until they are rebuilt. Agents edit the repo directly.
 
 ## A workorder
 
-A Markdown+ file. The frontmatter is what the [contract checker](../../src/core/contract/argc.sh) can verify. The body is the instruction.
+A Markdown+ file. The frontmatter is what a contract checker will verify once one is rebuilt (the last one is `src/core/contract/usage.sh` at commit `2913d23`). The body is the instruction.
 
 - `name`: lowercase, one segment, unique. Also the branch and PR title suffix.
 - `owns`: the only paths the agent may create or change, relative to the repo root. Two open workorders must never own the same path. That is what makes handing them out in parallel safe.
@@ -30,11 +29,7 @@ Keep each one finishable in a single session with a diff that someone can review
 
 ## Orchestrating
 
-Before handing anything out, check the queue. Every line must be `"verdict":"valid"`:
-
-```bash
-mise exec -- argc --argc-run usage bash src/core/contract/usage.sh check .skogai/workorders/open/*.md
-```
+Before handing anything out, check the queue by hand: names unique, no two open workorders own the same path. There is no checker until the contract checker is rebuilt.
 
 Hand a workorder to an agent with this prompt, filling in `<name>`:
 
@@ -48,4 +43,4 @@ These came up while writing this queue. They are recorded here, not settled.
 
 - **Path base.** The checker resolves `owns` relative to the declaring file's own directory, and rejects `..` and absolute paths. Workorders mean repo-root-relative paths. Conflict detection is still correct because every open workorder sits in the same folder. The `path-outside-scope` rule does not mark the repo boundary for these files.
 - **`depends_on` after completion.** A dependency that moves to `done/` drops out of a check over `open/` and shows up as `missing-dependency`. Checking `done/` as well would make finished workorders' `owns` conflict with new ones. Until this is decided, open workorders are independent and don't use `depends_on`.
-- **Enforcement.** `owns` is declared, not enforced. `src/core/run/argc.sh run` enforces it for a module's command, but not for agents working these workorders; review is the guard here.
+- **Enforcement.** `owns` is declared, not enforced. Nothing enforces it since the staged runner was deleted; review is the guard here.

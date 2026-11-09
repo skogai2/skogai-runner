@@ -1,5 +1,5 @@
 #!/bin/bash
-# Harness init.sh for skogai-runner (bash + argc, tested with bats via mise)
+# Harness init.sh for skogai-runner (bash + usage, tested with bats via mise)
 # Usage: .harness/init.sh [smoke_test|full_test|focused_test <test_file>]
 # Default: full_test
 #
@@ -27,7 +27,7 @@ echo "Date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo ""
 
 project_scripts() {
-    git ls-files -- 'src/*.sh' 'scripts/*.sh' '*.sh' ':!:best-version-so-far/**' ':!:docs/**' ':!:agents/**'
+    git ls-files -- 'src/*.sh' 'scripts/*.sh' '*.sh' ':!:best-argc-version/**' ':!:docs/**' ':!:agents/**'
 }
 
 case "$TARGET" in

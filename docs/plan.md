@@ -1,6 +1,6 @@
 # Plan
 
-The earlier plans are active. This sequence puts their foundation first; it does not replace the wider backlog in [.skogai/TODO.md](../.skogai/TODO.md) and [best-version-so-far/TODO.md](../best-version-so-far/TODO.md).
+The earlier plans are active. This sequence puts their foundation first; it does not replace the wider backlog in [.skogai/TODO.md](../.skogai/TODO.md) and [best-argc-version/TODO.md](../best-argc-version/TODO.md).
 
 ## 1. Establish the contracts
 
@@ -13,7 +13,7 @@ Done when valid and invalid examples have unambiguous outcomes, including missin
 
 ## 2. Hand-prepare one complete workorder
 
-Use one Markdown module, one declared local command, and one owned output in an isolated directory. Prepare intent, context, dependencies, tools, access, and acceptance checks before the agent starts. Use argc for the interface and mise for the development environment.
+Use one Markdown module, one declared local command, and one owned output in an isolated directory. Prepare intent, context, dependencies, tools, access, and acceptance checks before the agent starts. Use usage for the interface and mise for the development environment.
 
 Start with explicit commands and one writer. No daemon or network service is needed for this example.
 
@@ -39,4 +39,4 @@ Continue the existing module, memory, type, runner, bootstrap, and installation 
 
 ## Current status
 
-The vision and instructions are documented. The registry runner and its Bats suite exist. The relationship contract checker (`src/core/contract/argc.sh`, step 1 relationships only) is implemented and tested. Step 2's staged run is implemented and tested: `src/core/run/argc.sh` checks one module and runs its command in Podman with the module directory read-only and a staged output dir, applying only owned outputs (`examples/hello`, `tests/run.bats`). The enforcement is verified only where Podman is available. The full workorder lifecycle (prepared intent, context and acceptance as one document) remains planned. usage + mise is the chosen interface (2026-11-06): `src/core/run/usage.sh`, `src/core/contract/usage.sh` and `src/core/main-usage.sh` carry new work; the argc twins are frozen. Step 3 has started: `run/usage.sh` appends JSONL events in the skogai-core envelope (`docs/evidence.md`, `tests/run-events.bats`). A torn last line is ended before the next append, and `src/core/log/usage.sh` reads the log (`runs`, `show`). Still open from step 3: an effect whose record failed to append, linking events to a workorder and to the commit. Every usage example is a live test (`tests/examples.bats`). Next: a second module that `depends_on` hello.
+The vision and instructions are documented. usage + mise is the interface (2026-11-06); argc is retired. Steps 1 and 2 were implemented and tested once (contract checker, staged Podman run, run events, module install, config over mise layers), then deleted on 2026-11-07 so every module is rebuilt from definitions, config first; their last state is commit `2913d23`. Implemented now: `src/core/log/usage.sh` reads the JSONL run event log (`runs`, `show`; `tests/log.bats`). Settings are plain `SKOGAI_*` environment variables declared on usage flags (2026-11-09). Next: rebuild the contract checker and the staged run on usage, then link events to a workorder and a commit.

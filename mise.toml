@@ -1,5 +1,4 @@
 [tools]
-argc = "latest"
 usage = "latest"
 jq = "latest"
 yq = "latest"

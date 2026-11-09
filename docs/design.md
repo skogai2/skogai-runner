@@ -4,9 +4,9 @@ The earlier plans remain active. The immediate priority is to get the absolute b
 
 ## The three pieces
 
-**argc** is the interface for users and agents, including runtime validation and basic CLI facilities: parsing, help, completion, man pages, and JSON declarations. Tool declarations and REPL tooling should derive from that interface where possible. Integrations beyond what argc supplies need small, verified adapters.
+**usage** is the interface for users and agents (chosen over argc, 2026-11-06). A script declares its CLI in `#USAGE` comments and runs under `usage bash`; usage supplies parsing, validation, help, completion, man pages, and `effect` metadata that agents read through `usage mcp`. Tool declarations and REPL tooling should derive from that interface where possible. Integrations beyond what usage supplies need small, verified adapters.
 
-**mise** supplies the development environment, dependencies, and development tasks. Alongside Git config, it is a candidate for configuration and key/value settings. The exact division remains open; each setting needs an authoritative owner, explicit precedence, and a discoverable origin.
+**mise** supplies the development environment, dependencies, and development tasks. Settings are plain `SKOGAI_*` environment variables for now (2026-11-09): the script that reads one declares it on a usage flag (`env="SKOGAI_X"`), and persistent values live in mise `[env]` layers. A richer configuration model waits until the [mise research](../.skogai/research/mise.md) settles storage; each setting still needs an authoritative owner, explicit precedence, and a discoverable origin.
 
 **Markdown+** is the programmable description of intent. A module starts as a Markdown file whose body explains its purpose and whose typed frontmatter declares relationships: depends on a module, reads a resource, writes a file, owns a file, watches a file, or supplies a default. Define and enforce these relationships before building behavior on them.
 
@@ -49,10 +49,10 @@ These are requirements to implement and test, not guarantees already provided by
 
 ## Continuity with the earlier work
 
-`best-version-so-far/` contains active module, runner, memory, and type work. Its module specification describes frontmatter, layered configuration, installation offers, schemas, and contracts. Reuse and refine that work as the foundation becomes precise.
+`best-argc-version/` contains active module, runner, memory, and type work, written against argc. Its module specification describes frontmatter, layered configuration, installation offers, schemas, and contracts. Reuse and refine that work as the foundation becomes precise.
 
-The current `src/core/main.sh` uses a registry and a generated home Argcfile. The module implementation uses dynamic discovery. Both belong to the ongoing work; their eventual relationship remains an explicit decision. Earlier test counts and deployment claims need revalidation before being treated as current evidence.
+The registry runner (`src/core/main.sh`) and its usage twin were deleted in the 2026-11-07 remake; the earlier module implementation uses dynamic discovery. How the rebuilt entry point finds modules is an open decision. Earlier test counts and deployment claims need revalidation before being treated as current evidence.
 
-The bootstrap/install entry point, system definitions analogous to `/etc/skogai` and `/usr/share/skogai`, `.skogai/` as userspace or local override, typed agent work, and reusable bundles remain planned. The current Arch package installs a Bash template; packaging the eventual entry point is still open.
+The bootstrap/install entry point, system definitions analogous to `/etc/skogai` and `/usr/share/skogai`, `.skogai/` as userspace or local override, typed agent work, and reusable bundles remain planned. The current Arch package installs only the usage scripts under `src/core/`; packaging the eventual entry point is still open.
 
 See [the plan](plan.md) for the next steps and [AGENTS.md](../AGENTS.md) for working instructions.

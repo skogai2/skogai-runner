@@ -15,7 +15,7 @@ Status: **settled** = already decided somewhere, just scattered. **open** = stil
 | A check is a pure read: writes nothing, repeated runs are byte-identical | F001 spec only |
 | Paths are relative to the declaring file's directory, compared after lexical normalisation, symlinks never resolved | F001 spec only |
 | Frontmatter is state, the Markdown body is formatted text | TODO.md |
-| Stack: bash + argc + yq v4 + jq, tests in bats, tools from mise at `latest` (unpinned) | context_summary |
+| Stack: bash + usage + yq v4 + jq, tests in bats, tools from mise at `latest` (unpinned) | context_summary |
 | Tests isolate HOME under `$BATS_TEST_TMPDIR`; fixtures under `tests/fixtures/<area>/{valid,invalid/<reason>}/` | context_summary, F001 spec |
 | Coverage cannot be measured for bash; `coverage` is recorded as `n/a` and `bats tests` is the gate | context_summary gotcha |
 | Trust existing tools (git, mise, pacman) over building our own | memory, context_summary |
